@@ -1,0 +1,1339 @@
+<!--mjml kupony_březen.mjml -o kupony.html-->
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" color="#333333" />
+      <mj-button
+        background-color="#eeeeee"
+        color="#1a90e9"
+        border-radius="8px"
+        padding="10px 20px"
+        font-weight="bold"
+        align="center"
+      />
+      <mj-image padding="0" />
+    </mj-attributes>
+
+    <mj-breakpoint width="400px" />
+
+    <mj-style inline="inline">
+      /* Fallback: vynutí centrování tlačítka i tam, kde align zlobí */
+      .btn-center table {
+        margin: 0 auto !important;
+      }
+
+      @media only screen and (max-width: 400px) {
+        .h1 {
+          font-size: 22px !important;
+          text-align: center !important;
+        }
+        .lead {
+          font-size: 14px !important;
+        }
+        .note {
+          font-size: 10px !important;
+        }
+        .code {
+          font-size: 14px !important;
+        }
+        .logo {
+          max-width: 80px !important;
+        }
+      }
+    </mj-style>
+  </mj-head>
+
+  <mj-body background-color="#f6f6f6" width="600px">
+    <mj-section
+      background-color="#ffffff"
+      padding="15px 15px 0 25px"
+      border-radius="16px"
+    >
+      <mj-column>
+        <mj-text
+          css-class="h1"
+          font-size="26px"
+          color="#1a90e9"
+          font-weight="700"
+          padding="30px"
+        >
+          Už jste navštívili naši samoobsluhu na stránkách?
+        </mj-text>
+        <mj-text font-size="18px" font-weight="800" padding-left="30px">
+          Co v Samoobsluze zvládnete:
+        </mj-text>
+
+        <mj-table cellpadding="0" cellspacing="0" width="100%" padding="30px">
+          <tr>
+            <td style="vertical-align: top; width: 44px; padding: 10px 0">
+              <div
+                style="
+                  width: 34px;
+                  height: 34px;
+                  border-radius: 10px;
+                  background: #d70339;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                <span style="font-size: 18px; line-height: 34px; color: #ffffff"
+                  >✓</span
+                >
+              </div>
+            </td>
+            <td style="vertical-align: top; padding: 8px 0 10px 10px">
+              <div style="font-weight: 800; color: #111827">
+                Okamžitý přehled faktur a plateb
+              </div>
+              <div style="color: #6b7280; font-size: 14px; line-height: 1.6">
+                Zaplaťte nebo si stáhněte fakturu online během chvíle.
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="vertical-align: top; width: 44px; padding: 10px 0">
+              <div
+                style="
+                  width: 34px;
+                  height: 34px;
+                  border-radius: 10px;
+                  background: #d70339;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                <span style="font-size: 18px; line-height: 34px; color: #ffffff"
+                  >⚙</span
+                >
+              </div>
+            </td>
+            <td style="vertical-align: top; padding: 8px 0 10px 10px">
+              <div style="font-weight: 800; color: #111827">
+                Nastavení služeb
+              </div>
+              <div style="color: #6b7280; font-size: 14px; line-height: 1.6">
+                Změňte tarif nebo doplňkové služby bez čekání na podporu.
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="vertical-align: top; width: 44px; padding: 10px 0">
+              <div
+                style="
+                  width: 34px;
+                  height: 34px;
+                  border-radius: 10px;
+                  background: #d70339;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                <span style="font-size: 18px; line-height: 34px; color: #ffffff"
+                  >⏱</span
+                >
+              </div>
+            </td>
+            <td style="vertical-align: top; padding: 8px 0 10px 10px">
+              <div style="font-weight: 800; color: #111827">
+                Rychlá podpora 24/7
+              </div>
+              <div style="color: #6b7280; font-size: 14px; line-height: 1.6">
+                Odpovědi na nejčastější dotazy najdete přímo v samoobsluze.
+              </div>
+            </td>
+          </tr>
+
+          <tr>
+            <td style="vertical-align: top; width: 44px; padding: 10px 0">
+              <div
+                style="
+                  width: 34px;
+                  height: 34px;
+                  border-radius: 10px;
+                  background: #d70339;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                <span style="font-size: 18px; line-height: 34px; color: #ffffff"
+                  >🔎</span
+                >
+              </div>
+            </td>
+            <td style="vertical-align: top; padding: 8px 0 10px 10px">
+              <div style="font-weight: 800; color: #111827">
+                Diagnostika sítě
+              </div>
+              <div style="color: #6b7280; font-size: 14px; line-height: 1.6">
+                Pokud máte náš wifi router nabízíme možnosti diagnostiky sítě.
+              </div>
+            </td>
+          </tr>
+          <tr>
+            <td style="vertical-align: top; width: 44px; padding: 10px 0">
+              <div
+                style="
+                  width: 34px;
+                  height: 34px;
+                  border-radius: 10px;
+                  background: #d70339;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                "
+              >
+                <span style="font-size: 18px; line-height: 34px; color: #ffffff"
+                  >📋</span
+                >
+              </div>
+            </td>
+            <td style="vertical-align: top; padding: 8px 0 10px 10px">
+              <div style="font-weight: 800; color: #111827">
+                informace o službách
+              </div>
+              <div style="color: #6b7280; font-size: 14px; line-height: 1.6">
+                Přehledně na jednom místě veškeré informace o vašich službách.
+              </div>
+            </td>
+          </tr>
+        </mj-table>
+        <mj-button
+          font-size="16px"
+          color="#1a90e9"
+          font-weight="600"
+          align="center"
+          href="[!customer_portal_url!]"
+          inner-padding="20px 30px"
+          padding="0 0 40px 0"
+        >
+          VSTOUPIT
+        </mj-button>
+      </mj-column>
+    </mj-section>
+
+    <!-- Header card -->
+    <mj-section padding="15px 15px 0 15px">
+      <mj-column background-color="#ffffff" border-radius="16px" padding="30px">
+        <mj-text
+          css-class="h1"
+          font-size="26px"
+          color="#1a90e9"
+          font-weight="700"
+          padding="0 0 20px 0"
+        >
+          Slevové kódy pro věrné zákazníky
+        </mj-text>
+        <mj-text css-class="lead">
+          <strong>Vážení zákazníci,</strong><br />
+          zařídili jsme pro vás slevové kódy ve vybraných obchodech, díky kterým
+          můžete během
+          <span style="color: #1a90e9; font-weight: bold">DUBNA</span> ušetřit.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Mojelekarna.cz -->
+    <mj-section padding="10px 15px">
+      <mj-column
+        background-color="#e9f6fc"
+        border-radius="16px"
+        padding="20px"
+        width="380px"
+      >
+        <mj-text
+          align="center"
+          font-size="16px"
+          font-weight="bold"
+          padding-bottom="10px"
+          >Sleva 8% na všechno.</mj-text
+        >
+        <mj-image
+          align="center"
+          alt="Mojelekarna.cz"
+          css-class="logo"
+          padding-bottom="15px"
+          src="https://www.starnet.cz/download/mail/mojelekarna_logo_kupony.png"
+          width="140px"
+        ></mj-image>
+        <mj-text align="center" font-size="11px" padding-bottom="6px">
+          Slevový kód uplatněte kliknutím ZDE:
+        </mj-text>
+        <mj-button
+          align="center"
+          css-class="code btn-center"
+          href="https://www.kqzyfj.com/click-100257813-16982961?url=https%3A%2F%2Fwww.mojelekarna.cz%2F"
+          inner-padding="10px 20px"
+          >8603A366</mj-button
+        >
+        <mj-text
+          align="center"
+          color="#777"
+          css-class="note"
+          font-size="11px"
+          padding-bottom="10px"
+        >
+          Kód bude platný pouze při nákupu přes odkaz z tohoto emailu.
+        </mj-text>
+        <mj-text align="center" color="#777" css-class="note" font-size="10px">
+          Platnost od 1.4.2026 do 30.4.2026
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Gorenje.cz -->
+    <mj-section padding="10px 15px">
+      <mj-column
+        background-color="#e9f6fc"
+        border-radius="16px"
+        padding="20px"
+        width="380px"
+      >
+        <mj-text
+          align="center"
+          font-size="16px"
+          font-weight="bold"
+          padding-bottom="10px"
+          >Speciální sleva 20 % na všechny domácí spotřebiče Gorenje!</mj-text
+        >
+        <mj-image
+          align="center"
+          alt="Gorenje.cz"
+          css-class="logo"
+          padding-bottom="15px"
+          src="https://www.starnet.cz/download/mail/gorenje_logo_kupony.png"
+          width="140px"
+        ></mj-image>
+        <mj-text align="center" font-size="11px" padding-bottom="6px">
+          Slevový kód uplatněte kliknutím ZDE:
+        </mj-text>
+        <mj-button
+          align="center"
+          css-class="code btn-center"
+          href="https://www.anrdoezrs.net/click-100257813-15409173"
+          inner-padding="10px 20px"
+          >GORENJE20-AFF</mj-button
+        >
+        <mj-text
+          align="center"
+          color="#777"
+          css-class="note"
+          font-size="11px"
+          padding-bottom="10px"
+        >
+          Kód bude platný pouze při nákupu přes odkaz z tohoto emailu. Nelze
+          kombinovat s jinou slevovou akcí.
+        </mj-text>
+        <mj-text align="center" color="#777" css-class="note" font-size="10px">
+          Platnost od 1.4.2026 do 30.4.2026
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Kytary.cz -->
+    <mj-section padding="10px 15px">
+      <mj-column
+        background-color="#e9f6fc"
+        border-radius="16px"
+        padding="20px"
+        width="380px"
+      >
+        <mj-text
+          align="center"
+          font-size="16px"
+          font-weight="bold"
+          padding-bottom="10px"
+          >4% sleva</mj-text
+        >
+        <mj-image
+          align="center"
+          alt="Kytary.cz"
+          css-class="logo"
+          padding-bottom="15px"
+          src="https://www.starnet.cz/download/mail/kytarycz_logo_kupony.png"
+          width="140px"
+        ></mj-image>
+        <mj-text align="center" font-size="11px" padding-bottom="6px">
+          Slevový kód uplatněte kliknutím ZDE:
+        </mj-text>
+        <mj-button
+          align="center"
+          css-class="code btn-center"
+          href="https://www.anrdoezrs.net/click-100257813-15156580?url=https%3A%2F%2Fkytary.cz%2F"
+          inner-padding="10px 20px"
+          >kytary4net_aff</mj-button
+        >
+        <mj-text
+          align="center"
+          color="#777"
+          css-class="note"
+          font-size="11px"
+          padding-bottom="10px"
+        >
+          Kód bude platný pouze při nákupu přes odkaz z tohoto emailu. Slevový
+          kód lze použít na nezlevněné položky a nelze ho kombinovat s jinými
+          slevami.
+        </mj-text>
+        <mj-text align="center" color="#777" css-class="note" font-size="10px">
+          Platnost od 1.4.2026 do 30.4.2026
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Grada.cz -->
+    <mj-section padding="10px 15px">
+      <mj-column
+        background-color="#e9f6fc"
+        border-radius="16px"
+        padding="20px"
+        width="380px"
+      >
+        <mj-text
+          align="center"
+          font-size="16px"
+          font-weight="bold"
+          padding-bottom="10px"
+          >20% na vše</mj-text
+        >
+        <mj-image
+          align="center"
+          alt="Grada.cz"
+          css-class="logo"
+          padding-bottom="15px"
+          src="https://www.starnet.cz/download/mail/grada_logo_kupony.png"
+          width="140px"
+        ></mj-image>
+        <mj-text align="center" font-size="11px" padding-bottom="6px">
+          Slevový kód uplatněte kliknutím ZDE:
+        </mj-text>
+        <mj-button
+          align="center"
+          css-class="code btn-center"
+          href="https://www.tkqlhce.com/click-100257813-14036368?url=https%3A%2F%2Fwww.grada.cz%2F"
+          inner-padding="10px 20px"
+          >AFF-STR</mj-button
+        >
+        <mj-text
+          align="center"
+          color="#777"
+          css-class="note"
+          font-size="11px"
+          padding-bottom="10px"
+        >
+          Kód bude platný pouze při nákupu přes odkaz z tohoto emailu.
+        </mj-text>
+        <mj-text align="center" color="#777" css-class="note" font-size="10px">
+          Platnost od 1.4.2026 do 30.4.2026
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Karcher.cz -->
+    <mj-section padding="10px 15px">
+      <mj-column
+        background-color="#e9f6fc"
+        border-radius="16px"
+        padding="20px"
+        width="380px"
+      >
+        <mj-text
+          align="center"
+          font-size="16px"
+          font-weight="bold"
+          padding-bottom="10px"
+          >20 % sleva</mj-text
+        ><mj-text align="center" font-size="12px"
+          >20 % sleva platí pouze na řadu Home &amp; Garden.</mj-text
+        >
+        <mj-image
+          align="center"
+          alt="Karcher.cz"
+          css-class="logo"
+          padding-bottom="15px"
+          src="https://www.starnet.cz/download/mail/karcher_logo_kupony.png"
+          width="140px"
+        ></mj-image>
+        <mj-text align="center" font-size="11px" padding-bottom="6px">
+          Slevový kód uplatněte kliknutím ZDE:
+        </mj-text>
+        <mj-button
+          align="center"
+          css-class="code btn-center"
+          href="https://www.jdoqocy.com/click-100257813-17040500"
+          inner-padding="10px 20px"
+          >STRK20</mj-button
+        >
+        <mj-text
+          align="center"
+          color="#777"
+          css-class="note"
+          font-size="11px"
+          padding-bottom="10px"
+        >
+          Kód bude platný pouze při nákupu přes odkaz z tohoto emailu. 20 %
+          sleva platí pouze na řadu Home &amp; Garden. Neplatí na již zlevněné
+          produkty a produkty za dlouhodobě nízké ceny. Slevy a akce nelze
+          sčítat a kombinovat.
+        </mj-text>
+        <mj-text align="center" color="#777" css-class="note" font-size="10px">
+          Platnost od 1.4.2026 do 30.4.2026
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Philips -->
+    <mj-section padding="10px 15px">
+      <mj-column
+        background-color="#e9f6fc"
+        border-radius="16px"
+        padding="20px"
+        width="380px"
+      >
+        <mj-text
+          align="center"
+          font-size="16px"
+          font-weight="bold"
+          padding-bottom="10px"
+          >Sleva 20% pouze na segment osobní péče a segment pro matku a
+          dítě</mj-text
+        >
+        <mj-image
+          align="center"
+          alt="Philips"
+          css-class="logo"
+          padding-bottom="15px"
+          src="https://www.starnet.cz/download/mail/philips_logo_kupony.png"
+          width="140px"
+        ></mj-image>
+        <mj-text align="center" font-size="11px" padding-bottom="6px">
+          Slevový kód uplatněte kliknutím ZDE:
+        </mj-text>
+        <mj-button
+          align="center"
+          css-class="code btn-center"
+          href="https://www.jdoqocy.com/click-100257813-13631326?url=https%3A%2F%2Fwww.philips.cz%2F"
+          inner-padding="10px 20px"
+          >AF-HKGDSTRN20</mj-button
+        >
+        <mj-text
+          align="center"
+          color="#777"
+          css-class="note"
+          font-size="11px"
+          padding-bottom="10px"
+        >
+          Kód bude platný pouze při nákupu přes odkaz z tohoto emailu. Slevový
+          kód platí i na již zlevněné zboží.
+        </mj-text>
+        <mj-text align="center" color="#777" css-class="note" font-size="10px">
+          Platnost od 1.4.2026 do 30.4.2026
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Philips home appliances -->
+    <mj-section padding="10px 15px">
+      <mj-column
+        background-color="#e9f6fc"
+        border-radius="16px"
+        padding="20px"
+        width="380px"
+      >
+        <mj-text
+          align="center"
+          font-size="16px"
+          font-weight="bold"
+          padding-bottom="10px"
+          >Slevový kód 20% na segment domácích spotřebičů</mj-text
+        >
+        <mj-image
+          align="center"
+          alt="Philips"
+          css-class="logo"
+          padding-bottom="15px"
+          src="https://www.starnet.cz/download/mail/Philipshomeappliances_logo_kupony.png"
+          width="140px"
+        ></mj-image>
+        <mj-text align="center" font-size="11px" padding-bottom="6px">
+          Slevový kód uplatněte kliknutím ZDE:
+        </mj-text>
+        <mj-button
+          align="center"
+          css-class="code btn-center"
+          href="https://www.tkqlhce.com/click-100257813-17106689"
+          inner-padding="10px 20px"
+          >CZ-AF-HKGDST20</mj-button
+        >
+        <mj-text
+          align="center"
+          color="#777"
+          css-class="note"
+          font-size="11px"
+          padding-bottom="10px"
+        >
+          Kód bude platný pouze při nákupu přes odkaz z tohoto emailu.
+        </mj-text>
+        <mj-text align="center" color="#777" css-class="note" font-size="10px">
+          Platnost od 1.4.2026 do 30.4.2026
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- nordvpn -->
+    <mj-section padding="10px 15px">
+      <mj-column
+        background-color="#e9f6fc"
+        border-radius="16px"
+        padding="20px"
+        width="380px"
+      >
+        <mj-text
+          align="center"
+          font-size="16px"
+          font-weight="bold"
+          padding-bottom="10px"
+          >Extra sleva 5% na nákup 2-letého plánu</mj-text
+        >
+        <mj-image
+          align="center"
+          alt="https://nordvpn.com/"
+          css-class="logo"
+          padding-bottom="15px"
+          src="https://www.starnet.cz/download/mail/nordvpn_logo_kupony.png"
+          width="140px"
+        ></mj-image>
+        <mj-text align="center" font-size="11px" padding-bottom="6px">
+          Slevový kód uplatněte kliknutím ZDE:
+        </mj-text>
+        <mj-button
+          align="center"
+          css-class="code btn-center"
+          href="https://www.tkqlhce.com/click-100257813-15325269"
+          inner-padding="10px 20px"
+          >VPNSTN5</mj-button
+        >
+        <mj-text
+          align="center"
+          color="#777"
+          css-class="note"
+          font-size="11px"
+          padding-bottom="10px"
+        >
+          Kód bude platný pouze při nákupu přes odkaz z tohoto emailu.
+        </mj-text>
+        <mj-text align="center" color="#777" css-class="note" font-size="10px">
+          Platnost od 1.4.2026 do 30.4.2026
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- kandvelektro -->
+    <mj-section padding="10px 15px">
+      <mj-column
+        background-color="#e9f6fc"
+        border-radius="16px"
+        padding="20px"
+        width="380px"
+      >
+        <mj-text
+          align="center"
+          font-size="16px"
+          font-weight="bold"
+          padding-bottom="10px"
+          >10% sleva při nákupu nad 1500Kč</mj-text
+        >
+        <mj-image
+          align="center"
+          alt="www.kvelektro.cz"
+          css-class="logo"
+          padding-bottom="15px"
+          src="https://www.starnet.cz/download/mail/kandvelektro_logo_kupony.png"
+          width="140px"
+        ></mj-image>
+        <mj-text align="center" font-size="11px" padding-bottom="6px">
+          Slevový kód uplatněte kliknutím ZDE:
+        </mj-text>
+        <mj-button
+          align="center"
+          css-class="code btn-center"
+          href="https://www.jdoqocy.com/click-100257813-15023136?url=https%3A%2F%2Fwww.kvelektro.cz%2F"
+          inner-padding="10px 20px"
+          >SLEVASTN</mj-button
+        >
+        <mj-text
+          align="center"
+          color="#777"
+          css-class="note"
+          font-size="11px"
+          padding-bottom="10px"
+        >
+          Kód bude platný pouze při nákupu přes odkaz z tohoto emailu. Kupón nelze uplatnit na již zlevněné zboží.
+        </mj-text>
+        <mj-text align="center" color="#777" css-class="note" font-size="10px">
+          Platnost od 1.4.2026 do 30.4.2026
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Bottlesandstories.cz -->
+    <mj-section padding="10px 15px">
+      <mj-column
+        background-color="#e9f6fc"
+        border-radius="16px"
+        padding="20px"
+        width="380px"
+      >
+        <mj-text
+          align="center"
+          font-size="16px"
+          font-weight="bold"
+          padding-bottom="10px"
+          >Sleva 12 %</mj-text
+        ><mj-text align="center" font-size="12px"></mj-text>
+        <mj-image
+          align="center"
+          alt="Bottlesandstories.cz"
+          css-class="logo"
+          padding-bottom="15px"
+          src="https://www.starnet.cz/download/mail/bottlesandstories_logo_kupony.jpg"
+          width="140px"
+        ></mj-image>
+        <mj-text align="center" font-size="11px" padding-bottom="6px">
+          Slevový kód uplatněte kliknutím ZDE:
+        </mj-text>
+        <mj-button
+          align="center"
+          css-class="code btn-center"
+          href="https://www.kqzyfj.com/click-100257813-15219454?url=https%3A%2F%2Fbottlesandstories.cz%2F"
+          inner-padding="10px 20px"
+          >AFF-STR12</mj-button
+        >
+        <mj-text
+          align="center"
+          color="#777"
+          css-class="note"
+          font-size="11px"
+          padding-bottom="10px"
+        >
+          Kód bude platný pouze při nákupu přes odkaz z tohoto emailu.
+          Nevztahuje se na: <br />1. Zlevněné produkty a produkty <br />2. Na
+          kombinace lahvi 1+1 atd. <br />3. Na všechny položky Jagermeister<br />
+          4. Na Bruichladdich Octomore, 21, 23, 26 a 30 leté lahve Glenfiddich.
+        </mj-text>
+        <mj-text align="center" color="#777" css-class="note" font-size="10px">
+          Platnost od 1.4.2026 do 30.4.2026
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- https://www.vsechnonamobil.cz/ -->
+    <mj-section padding="10px 15px">
+      <mj-column
+        background-color="#e9f6fc"
+        border-radius="16px"
+        padding="20px"
+        width="380px"
+      >
+        <mj-text
+          align="center"
+          font-size="16px"
+          font-weight="bold"
+          padding-bottom="10px"
+          >Sleva 10% na všechny produkty</mj-text
+        >
+        <mj-image
+          align="center"
+          alt="https://www.vsechnonamobil.cz/"
+          css-class="logo"
+          padding-bottom="15px"
+          src="https://www.starnet.cz/download/mail/vsechnonamobil_logo_kupony.png"
+          width="140px"
+        ></mj-image>
+        <mj-text align="center" font-size="11px" padding-bottom="6px">
+          Slevový kód uplatněte kliknutím ZDE:
+        </mj-text>
+        <mj-button
+          align="center"
+          css-class="code btn-center"
+          href="https://www.jdoqocy.com/click-100257813-15673632?url=https%3A%2F%2Fwww.vsechnonamobil.cz%2F%3Fgad_source%3D1%26gclid%3DCjwKCAiAg9urBhB_EiwAgw88mVF11EnDrH0xYdHMl1kUOxeYg1g6tnp442FDTEOTiNRYOK1jZL33FRoCS3sQAvD_BwE"
+          inner-padding="10px 20px"
+          >SN10</mj-button
+        >
+        <mj-text
+          align="center"
+          color="#777"
+          css-class="note"
+          font-size="11px"
+          padding-bottom="10px"
+        >
+          Kód bude platný pouze při nákupu přes odkaz z tohoto emailu.
+        </mj-text>
+        <mj-text align="center" color="#777" css-class="note" font-size="10px">
+          Platnost od 1.4.2026 do 30.4.2026
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- paulnabytek.cz -->
+    <mj-section padding="10px 15px">
+      <mj-column
+        background-color="#e9f6fc"
+        border-radius="16px"
+        padding="20px"
+        width="380px"
+      >
+        <mj-text
+          align="center"
+          font-size="16px"
+          font-weight="bold"
+          padding-bottom="10px"
+          >3% sleva na všechen sortiment z nábytku</mj-text
+        >
+        <mj-image
+          align="center"
+          alt="paulnabytek.cz"
+          css-class="logo"
+          padding-bottom="15px"
+          src="https://www.starnet.cz/download/mail/nabytekpaul_logo_kupony.png"
+          width="140px"
+        ></mj-image>
+        <mj-text align="center" font-size="11px" padding-bottom="6px">
+          Slevový kód uplatněte kliknutím ZDE:
+        </mj-text>
+        <mj-button
+          align="center"
+          css-class="code btn-center"
+          href="https://www.kqzyfj.com/click-100257813-14026975?url=https%3A%2F%2Fwww.nabytekpaul.cz%2F"
+          inner-padding="10px 20px"
+          >CJ25STPAUL</mj-button
+        >
+        <mj-text
+          align="center"
+          color="#777"
+          css-class="note"
+          font-size="11px"
+          padding-bottom="10px"
+        >
+          Kód bude platný pouze při nákupu přes odkaz z tohoto emailu.
+        </mj-text>
+        <mj-text align="center" color="#777" css-class="note" font-size="10px">
+          Platnost od 1.4.2026 do 30.4.2026
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- soaphoria.cz -->
+    <mj-section padding="10px 15px">
+      <mj-column
+        background-color="#e9f6fc"
+        border-radius="16px"
+        padding="20px"
+        width="380px"
+      >
+        <mj-text
+          align="center"
+          font-size="16px"
+          font-weight="bold"
+          padding-bottom="10px"
+          >Sleva 11% na všetky nezľavnené výrobky</mj-text
+        >
+        <mj-image
+          align="center"
+          alt="soaphoria.cz"
+          css-class="logo"
+          padding-bottom="15px"
+          src="https://www.starnet.cz/download/mail/soaphoria_logo_kupony.jpg"
+          width="140px"
+        ></mj-image>
+        <mj-text align="center" font-size="11px" padding-bottom="6px">
+          Slevový kód uplatněte kliknutím ZDE:
+        </mj-text>
+        <mj-button
+          align="center"
+          css-class="code btn-center"
+          href="https://www.tkqlhce.com/click-100257813-15539678?url=https%3A%2F%2Fwww.soaphoria.cz%2Fcs%2F"
+          inner-padding="10px 20px"
+          >SOAPSTAR24X</mj-button
+        >
+        <mj-text
+          align="center"
+          color="#777"
+          css-class="note"
+          font-size="11px"
+          padding-bottom="10px"
+        >
+          Kód bude platný pouze při nákupu přes odkaz z tohoto emailu. Nedá se
+          kombinovat s jinými slevami
+        </mj-text>
+        <mj-text align="center" color="#777" css-class="note" font-size="10px">
+          Platnost od 1.4.2026 do 30.4.2026
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- evolveo.cz -->
+    <mj-section padding="10px 15px">
+      <mj-column
+        background-color="#e9f6fc"
+        border-radius="16px"
+        padding="20px"
+        width="380px"
+      >
+        <mj-text
+          align="center"
+          font-size="16px"
+          font-weight="bold"
+          padding-bottom="10px"
+          >Sleva 15% při nákupu nad 2000Kč</mj-text
+        >
+        <mj-image
+          align="center"
+          alt="evolveo.cz"
+          css-class="logo"
+          padding-bottom="15px"
+          src="https://www.starnet.cz/download/mail/evolveo_logo_kupony.png"
+          width="140px"
+        ></mj-image>
+        <mj-text align="center" font-size="11px" padding-bottom="6px">
+          Slevový kód uplatněte kliknutím ZDE:
+        </mj-text>
+        <mj-button
+          align="center"
+          css-class="code btn-center"
+          href="https://www.jdoqocy.com/click-100257813-15117694?url=https%3A%2F%2Feshop.evolveo.cz%2F"
+          inner-padding="10px 20px"
+          >EVONET15</mj-button
+        >
+        <mj-text
+          align="center"
+          color="#777"
+          css-class="note"
+          font-size="11px"
+          padding-bottom="10px"
+        >
+          Kód bude platný pouze při nákupu přes odkaz z tohoto emailu.
+        </mj-text>
+        <mj-text align="center" color="#777" css-class="note" font-size="10px">
+          Platnost od 1.4.2026 do 30.4.2026
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- salente.cz -->
+    <mj-section padding="10px 15px">
+      <mj-column
+        background-color="#e9f6fc"
+        border-radius="16px"
+        padding="20px"
+        width="380px"
+      >
+        <mj-text
+          align="center"
+          font-size="16px"
+          font-weight="bold"
+          padding-bottom="10px"
+          >Sleva 15% při nákupu nad 2000Kč</mj-text
+        >
+        <mj-image
+          align="center"
+          alt="salente.cz"
+          css-class="logo"
+          padding-bottom="15px"
+          src="https://www.starnet.cz/download/mail/salente_logo_kupony.png"
+          width="140px"
+        ></mj-image>
+        <mj-text align="center" font-size="11px" padding-bottom="6px">
+          Slevový kód uplatněte kliknutím ZDE:
+        </mj-text>
+        <mj-button
+          align="center"
+          css-class="code btn-center"
+          href="https://www.tkqlhce.com/click-100257813-15117685?url=https%3A%2F%2Feshop.salente.cz%2F"
+          inner-padding="10px 20px"
+          >SALNET15</mj-button
+        >
+        <mj-text
+          align="center"
+          color="#777"
+          css-class="note"
+          font-size="11px"
+          padding-bottom="10px"
+        >
+          Kód bude platný pouze při nákupu přes odkaz z tohoto emailu.
+        </mj-text>
+        <mj-text align="center" color="#777" css-class="note" font-size="10px">
+          Platnost od 1.4.2026 do 30.4.2026
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Knihydobrovsky.cz -->
+    <mj-section padding="10px 15px">
+      <mj-column
+        background-color="#e9f6fc"
+        border-radius="16px"
+        padding="20px"
+        width="380px"
+      >
+        <mj-text
+          align="center"
+          font-size="16px"
+          font-weight="bold"
+          padding-bottom="10px"
+          >Sleva 100 Kč při nákupu nad 999 Kč</mj-text
+        ><mj-text align="center" font-size="12px"></mj-text>
+        <mj-image
+          align="center"
+          alt="Knihydobrovsky.cz"
+          css-class="logo"
+          padding-bottom="15px"
+          src="https://www.starnet.cz/download/mail/KnihyDobrovsky_logo_kupony.png"
+          width="140px"
+        ></mj-image>
+        <mj-text align="center" font-size="11px" padding-bottom="6px">
+          Slevový kód uplatněte kliknutím ZDE:
+        </mj-text>
+        <mj-button
+          align="center"
+          css-class="code btn-center"
+          href="https://www.anrdoezrs.net/click-100257813-13240526?url=https%3A%2F%2Fwww.knihydobrovsky.cz%2F"
+          inner-padding="10px 20px"
+        >
+          NET34AFKD</mj-button
+        >
+        <mj-text
+          align="center"
+          color="#777"
+          css-class="note"
+          font-size="11px"
+          padding-bottom="10px"
+        >
+          Kód bude platný pouze při nákupu přes odkaz z tohoto emailu. Neplatí
+          na tituly se slevou vyšší než 20 %, dárkové poukazy, čtečky e-knih a
+          tituly v akci typu 1+1 zdarma.
+        </mj-text>
+        <mj-text align="center" color="#777" css-class="note" font-size="10px">
+          Platnost od 1.4.2026 do 30.4.2026
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Mistore.cz -->
+    <mj-section padding="10px 15px">
+      <mj-column
+        background-color="#e9f6fc"
+        border-radius="16px"
+        padding="20px"
+        width="380px"
+      >
+        <mj-text
+          align="center"
+          font-size="16px"
+          font-weight="bold"
+          padding-bottom="10px"
+          >sleva 100 Kč při nákupu nad 1000 Kč</mj-text
+        >
+        <mj-image
+          align="center"
+          alt="Mistore.cz"
+          css-class="logo"
+          padding-bottom="15px"
+          src="https://www.starnet.cz/download/mail/mistore_logo_kupony.png"
+          width="140px"
+        ></mj-image>
+        <mj-text align="center" font-size="11px" padding-bottom="6px">
+          Slevový kód uplatněte kliknutím ZDE:
+        </mj-text>
+        <mj-button
+          align="center"
+          css-class="code btn-center"
+          href="https://www.dpbolvw.net/click-100257813-17101997?url=https%3A%2F%2Fwww.mistore.cz%2F"
+          inner-padding="10px 20px"
+          >STARMI10</mj-button
+        >
+        <mj-text
+          align="center"
+          color="#777"
+          css-class="note"
+          font-size="11px"
+          padding-bottom="10px"
+        >
+          Kód bude platný pouze při nákupu přes odkaz z tohoto emailu. Neplatí
+          pro produkty s akční/promo cenou, nelze kombinovat s jinými kupony a
+          akcemi.
+        </mj-text>
+        <mj-text align="center" color="#777" css-class="note" font-size="10px">
+          Platnost od 1.4.2026 do 30.4.2026
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Amazfit.cz -->
+    <mj-section padding="10px 15px">
+      <mj-column
+        background-color="#e9f6fc"
+        border-radius="16px"
+        padding="20px"
+        width="380px"
+      >
+        <mj-text
+          align="center"
+          font-size="16px"
+          font-weight="bold"
+          padding-bottom="10px"
+          >sleva 100 Kč při nákupu nad 1000 Kč</mj-text
+        >
+        <mj-image
+          align="center"
+          alt="Amazfit.cz"
+          css-class="logo"
+          padding-bottom="15px"
+          src="https://www.starnet.cz/download/mail/amazfit_logo_kupony.png"
+          width="140px"
+        ></mj-image>
+        <mj-text align="center" font-size="11px" padding-bottom="6px">
+          Slevový kód uplatněte kliknutím ZDE:
+        </mj-text>
+        <mj-button
+          align="center"
+          css-class="code btn-center"
+          href="https://www.jdoqocy.com/click-100257813-17099030?url=https%3A%2F%2Fwww.amazfit.cz%2F"
+          inner-padding="10px 20px"
+          >STRAMZ10</mj-button
+        >
+        <mj-text
+          align="center"
+          color="#777"
+          css-class="note"
+          font-size="11px"
+          padding-bottom="10px"
+        >
+          Kód bude platný pouze při nákupu přes odkaz z tohoto emailu. Neplatí
+          pro produkty s akční/promo cenou, nelze kombinovat s jinými kupony a
+          akcemi.
+        </mj-text>
+        <mj-text align="center" color="#777" css-class="note" font-size="10px">
+          Platnost od 1.4.2026 do 30.4.2026
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Djishop.cz -->
+    <mj-section padding="10px 15px">
+      <mj-column
+        background-color="#e9f6fc"
+        border-radius="16px"
+        padding="20px"
+        width="380px"
+      >
+        <mj-text
+          align="center"
+          font-size="16px"
+          font-weight="bold"
+          padding-bottom="10px"
+          >sleva 100 Kč při nákupu nad 1000 Kč</mj-text
+        >
+        <mj-image
+          align="center"
+          alt="Djishop.cz"
+          css-class="logo"
+          padding-bottom="15px"
+          src="https://www.starnet.cz/download/mail/dji_logo_kupony.png"
+          width="140px"
+        ></mj-image>
+        <mj-text align="center" font-size="11px" padding-bottom="6px">
+          Slevový kód uplatněte kliknutím ZDE:
+        </mj-text>
+        <mj-button
+          align="center"
+          css-class="code btn-center"
+          href="https://www.dpbolvw.net/click-100257813-17099023?url=https%3A%2F%2Fwww.djishop.cz%2F%3Fsrsltid%3DAfmBOooaoW3IVsFXqoiaW4cRbe4Hz46xxr-vzULd1vl3nBrPzYCkSP9i"
+          inner-padding="10px 20px"
+          >STARDJI10</mj-button
+        >
+        <mj-text
+          align="center"
+          color="#777"
+          css-class="note"
+          font-size="11px"
+          padding-bottom="10px"
+        >
+          Kód bude platný pouze při nákupu přes odkaz z tohoto emailu. Neplatí
+          pro produkty s akční/promo cenou, nelze kombinovat s jinými kupony a
+          akcemi.
+        </mj-text>
+        <mj-text align="center" color="#777" css-class="note" font-size="10px">
+          Platnost od 1.4.2026 do 30.4.2026
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- diablo chairs -->
+    <mj-section padding="10px 15px">
+      <mj-column
+        width="380px"
+        background-color="#e9f6fc"
+        border-radius="16px"
+        padding="20px"
+      >
+        <mj-text
+          font-size="16px"
+          font-weight="bold"
+          padding-bottom="10px"
+          align="center"
+        >
+          Sleva 8 % na všechno včetně zlevněného zboží
+        </mj-text>
+        <mj-image
+          css-class="logo"
+          src="https://www.starnet.cz/download/mail/diablochairs_logo_kupony.png"
+          alt="amazfit logo"
+          width="140px"
+          align="center"
+          padding-bottom="15px"
+        />
+        <mj-text font-size="11px" padding-bottom="6px" align="center">
+          Slevový kód uplatněte kliknutím ZDE:
+        </mj-text>
+        <mj-button
+          href="https://www.tkqlhce.com/click-100257813-16937831?url=https%3A%2F%2Fdiablochairs.com%2Fcz%2F"
+          inner-padding="10px 20px"
+          css-class="code btn-center"
+          align="center"
+        >
+          INTERNET8
+        </mj-button>
+        <mj-text
+          font-size="11px"
+          color="#777"
+          padding-bottom="10px"
+          align="center"
+          css-class="note"
+        >
+          Kód bude platný pouze při nákupu přes odkaz z tohoto emailu.
+        </mj-text>
+        <mj-text font-size="10px" color="#777" align="center" css-class="note">
+          Platnost od 1.4.2026 do 30.4.2026
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Trenýrkárna Europe -->
+    <mj-section padding="10px 15px">
+      <mj-column
+        width="380px"
+        background-color="#e9f6fc"
+        border-radius="16px"
+        padding="20px"
+      >
+        <mj-text
+          font-size="16px"
+          font-weight="bold"
+          padding-bottom="10px"
+          align="center"
+        >
+          Sleva 20 % platí na celou objednávku
+        </mj-text>
+        <mj-image
+          css-class="logo"
+          src="https://www.starnet.cz/download/mail/trenyrkarna_logo_kupony.png"
+          alt="amazfit logo"
+          width="140px"
+          align="center"
+          padding-bottom="15px"
+        />
+        <mj-text font-size="11px" padding-bottom="6px" align="center">
+          Slevový kód uplatněte kliknutím ZDE:
+        </mj-text>
+        <mj-button
+          href="https://www.kqzyfj.com/click-100257813-15067245"
+          inner-padding="10px 20px"
+          css-class="code btn-center"
+          align="center"
+        >
+          SLEVICKA20
+        </mj-button>
+        <mj-text
+          font-size="11px"
+          color="#777"
+          padding-bottom="10px"
+          align="center"
+          css-class="note"
+        >
+          Kód bude platný pouze při nákupu přes odkaz z tohoto emailu.
+        </mj-text>
+        <mj-text font-size="10px" color="#777" align="center" css-class="note">
+          Platnost od 1.4.2026 do 30.4.2026
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Vivantis -->
+    <mj-section padding="10px 15px">
+      <mj-column
+        width="380px"
+        background-color="#e9f6fc"
+        border-radius="16px"
+        padding="20px"
+      >
+        <mj-text
+          font-size="16px"
+          font-weight="bold"
+          padding-bottom="10px"
+          align="center"
+        >
+          Sleva 10% na nezlevněnou kosmetiku, módní doplňky, hodinky, šperky a
+          sortiment zdraví
+        </mj-text>
+        <mj-image
+          css-class="logo"
+          src="https://www.starnet.cz/download/mail/vivantis_logo_kupony.png"
+          alt="amazfit logo"
+          width="140px"
+          align="center"
+          padding-bottom="15px"
+        />
+        <mj-text font-size="11px" padding-bottom="6px" align="center">
+          Slevový kód uplatněte kliknutím ZDE:
+        </mj-text>
+        <mj-button
+          href="https://www.jdoqocy.com/click-100257813-12411812"
+          inner-padding="10px 20px"
+          css-class="code btn-center"
+          align="center"
+        >
+          STAR10
+        </mj-button>
+        <mj-text
+          font-size="11px"
+          color="#777"
+          padding-bottom="10px"
+          align="center"
+          css-class="note"
+        >
+          Kód bude platný pouze při nákupu přes odkaz z tohoto emailu.
+        </mj-text>
+        <mj-text font-size="10px" color="#777" align="center" css-class="note">
+          Platnost od 1.4.2026 do 30.4.2026
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Footer card -->
+    <mj-section padding="10px 15px 20px 15px">
+      <mj-column background-color="#1a90e9" border-radius="16px" padding="20px">
+        <mj-text color="#ffffff" font-size="12px" align="center">
+          [!company_name!] Vám přeje příjemné nakupování! Děkujeme, že jste s
+          námi. Slevové kódy platí jen v uvedeném období a jsou určeny
+          zákazníkům společnosti [!company_name!].
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

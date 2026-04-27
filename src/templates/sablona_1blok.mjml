@@ -1,0 +1,130 @@
+<!--mjml kupony_tokenova_sablona.mjml -o kupony.html-->
+<mjml>
+  <mj-head>
+    <mj-attributes>
+      <mj-all font-family="Arial, sans-serif" />
+      <mj-text font-size="16px" color="#333333" />
+      <mj-button
+        background-color="#eeeeee"
+        color="#1a90e9"
+        border-radius="8px"
+        padding="10px 20px"
+        font-weight="bold"
+        align="center"
+      />
+      <mj-image padding="0" />
+    </mj-attributes>
+
+    <mj-breakpoint width="400px" />
+
+    <mj-style inline="inline">
+      .btn-center table {
+        margin: 0 auto !important;
+      }
+
+      @media only screen and (max-width: 400px) {
+        .h1 {
+          font-size: 22px !important;
+          text-align: center !important;
+        }
+        .lead {
+          font-size: 14px !important;
+        }
+        .note {
+          font-size: 10px !important;
+        }
+        .code {
+          font-size: 14px !important;
+        }
+        .logo {
+          max-width: 80px !important;
+        }
+      }
+    </mj-style>
+  </mj-head>
+
+  <mj-body background-color="#f6f6f6" width="600px">
+    <!-- Header card -->
+    <mj-section padding="15px 15px 0 15px">
+      <mj-column background-color="#ffffff" border-radius="16px" padding="30px">
+        <mj-text
+          css-class="h1"
+          font-size="26px"
+          color="#1a90e9"
+          font-weight="700"
+          padding="0 0 20px 0"
+        >
+          Slevové kódy pro věrné zákazníky
+        </mj-text>
+        <mj-text css-class="lead">
+          <strong>Vážení zákazníci,</strong><br />
+          zařídili jsme pro vás slevové kódy ve vybraných obchodech, díky kterým
+          můžete během
+          <span style="color: #1a90e9; font-weight: bold">[?MĚSÍC?]</span> ušetřit.
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Kuponovy blok -->
+    <mj-section padding="10px 15px">
+      <mj-column
+        background-color="#e9f6fc"
+        border-radius="16px"
+        padding="20px"
+        width="380px"
+      >
+        <mj-text
+          align="center"
+          font-size="16px"
+          font-weight="bold"
+          padding-bottom="10px"
+        >
+          [?SPECIFIKACE PROMOKODU?]
+        </mj-text>
+        <mj-image
+          align="center"
+          alt=""
+          css-class="logo"
+          padding-bottom="15px"
+          src="[?ODKAZ NA LOGO?]"
+          width="140px"
+        ></mj-image>
+        <mj-text align="center" font-size="11px" padding-bottom="6px">
+          Slevový kód uplatněte kliknutím ZDE:
+        </mj-text>
+        <mj-button
+          align="center"
+          css-class="code btn-center"
+          href="[?AFFILIATE ODKAZ?]"
+          inner-padding="10px 20px"
+        >
+          [?SLEVOVÝ KÓD?]
+        </mj-button>
+        <mj-text
+          align="center"
+          color="#777"
+          css-class="note"
+          font-size="11px"
+          padding-bottom="10px"
+        >
+          Kód bude platný pouze při nákupu přes odkaz z tohoto emailu.
+          [?PODMÍNKA?]
+        </mj-text>
+        <mj-text align="center" color="#777" css-class="note" font-size="10px">
+          Platnost od [?PLATNOST OD?]
+        </mj-text>
+      </mj-column>
+    </mj-section>
+
+    <!-- Footer card -->
+    <mj-section padding="10px 15px 20px 15px">
+      <mj-column background-color="#1a90e9" border-radius="16px" padding="20px">
+        <mj-text color="#ffffff" font-size="12px" align="center">
+          [!company_name!] Vám přeje příjemné nakupování! Děkujeme, že jste s
+          námi. Slevové kódy platí jen v uvedeném období a jsou určeny
+          zákazníkům společnosti [!company_name!].
+        </mj-text>
+      </mj-column>
+    </mj-section>
+  </mj-body>
+</mjml>

@@ -45,6 +45,11 @@ type FormState = {
 
 type Tab = "preview" | "mjml" | "html" | "issues";
 type SuccessfulResult = Extract<GenerateEmailResponse, { ok: true }>;
+type BuilderDropPosition = "before" | "after" | "inside";
+type BuilderDropPreview = {
+  blockId: string;
+  position: BuilderDropPosition;
+} | null;
 type BuilderDropHandler = (
   event: DragEvent<HTMLElement>,
   index: number,
@@ -147,7 +152,6 @@ const builderBlockMime = "application/x-mjml-builder-block-id";
 const builderRootBlockTypes: BuilderBlockType[] = [
   "section",
   "wrapper",
-  "header",
   "hero",
   "image-hero",
   "coupon",
@@ -168,6 +172,23 @@ const builderRootBlockTypes: BuilderBlockType[] = [
   "raw-html",
   "raw-mjml",
   "footer"
+];
+
+const builderFontOptions = [
+  { label: "Montserrat", value: "Montserrat, Arial, sans-serif" },
+  { label: "Arial", value: "Arial, sans-serif" },
+  { label: "Georgia", value: "Georgia, serif" },
+  { label: "Verdana", value: "Verdana, sans-serif" },
+  { label: "Tahoma", value: "Tahoma, sans-serif" },
+  { label: "Times New Roman", value: "\"Times New Roman\", serif" }
+];
+
+const builderFontWeightOptions = [
+  { label: "Normal 400", value: "400" },
+  { label: "Medium 500", value: "500" },
+  { label: "Semibold 600", value: "600" },
+  { label: "Bold 700", value: "700" },
+  { label: "Extra Bold 800", value: "800" }
 ];
 
 function cloneBuilderBlocks(blocks = defaultBuilderBlocks): BuilderBlock[] {
@@ -220,6 +241,65 @@ function findBuilderBlock(blocks: BuilderBlock[], id: string): BuilderBlock | nu
     }
   }
   return null;
+}
+
+function findBuilderBlockLocation(
+  blocks: BuilderBlock[],
+  id: string,
+  parentId?: string
+): { index: number; parentId?: string } | null {
+  const index = blocks.findIndex((block) => block.id === id);
+  if (index >= 0) {
+    return { index, parentId };
+  }
+
+  for (const block of blocks) {
+    if (!block.children) {
+      continue;
+    }
+
+    const childLocation = findBuilderBlockLocation(block.children, id, block.id);
+    if (childLocation) {
+      return childLocation;
+    }
+  }
+
+  return null;
+}
+
+function getBuilderDropEffect(event: DragEvent<HTMLElement>) {
+  return Array.from(event.dataTransfer.types).includes(builderPaletteMime)
+    ? "copy"
+    : "move";
+}
+
+function getBlockDropPosition(
+  event: DragEvent<HTMLElement>,
+  canDropInside: boolean
+): BuilderDropPosition {
+  const rect = event.currentTarget.getBoundingClientRect();
+  const ratio = rect.height > 0 ? (event.clientY - rect.top) / rect.height : 0.5;
+
+  if (canDropInside) {
+    if (ratio < 0.25) {
+      return "before";
+    }
+    if (ratio > 0.75) {
+      return "after";
+    }
+    return "inside";
+  }
+
+  return ratio < 0.5 ? "before" : "after";
+}
+
+function isLeavingDropTarget(event: DragEvent<HTMLElement>) {
+  const relatedTarget = event.relatedTarget;
+  if (!relatedTarget || typeof Node === "undefined" || !(relatedTarget instanceof Node)) {
+    return true;
+  }
+
+  return !event.currentTarget.contains(relatedTarget);
 }
 
 function mapBuilderBlocks(
@@ -389,6 +469,8 @@ const responsiveBuilderFieldKeys = new Set([
   "buttonText",
   "borderRadius",
   "color",
+  "fontFamily",
+  "fontWeight",
   "height",
   "iconSize",
   "innerPadding",
@@ -565,7 +647,9 @@ function parseImportedContentElement(element: Element): BuilderBlock | null {
     block.props.text = elementText(element);
     setPropFromAttr(block.props, "align", element, "align");
     setPropFromAttr(block.props, "textColor", element, "color");
+    setPropFromAttr(block.props, "fontFamily", element, "font-family");
     setPropFromAttr(block.props, "fontSize", element, "font-size");
+    setPropFromAttr(block.props, "fontWeight", element, "font-weight");
     setPropFromAttr(block.props, "lineHeight", element, "line-height");
     setPropFromAttr(block.props, "padding", element, "padding");
     return block;
@@ -578,6 +662,8 @@ function parseImportedContentElement(element: Element): BuilderBlock | null {
     setPropFromAttr(block.props, "align", element, "align");
     setPropFromAttr(block.props, "backgroundColor", element, "background-color");
     setPropFromAttr(block.props, "textColor", element, "color");
+    setPropFromAttr(block.props, "fontFamily", element, "font-family");
+    setPropFromAttr(block.props, "fontWeight", element, "font-weight");
     setPropFromAttr(block.props, "borderRadius", element, "border-radius");
     setPropFromAttr(block.props, "innerPadding", element, "inner-padding");
     setPropFromAttr(block.props, "sectionPadding", element, "padding");
@@ -710,7 +796,7 @@ function parseImportedContentElement(element: Element): BuilderBlock | null {
 }
 
 export default function Home() {
-  const [form, setForm] = useState<FormState>(emptyForm);
+  const [form, setForm] = useState<FormState>(builderTemplateForm);
   const [couponFile, setCouponFile] = useState<File | null>(null);
   const [couponTemplateFile, setCouponTemplateFile] = useState<File | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>("preview");
@@ -1071,6 +1157,27 @@ export default function Home() {
   }
 
   function reorderBuilderBlock(id: string, targetIndex: number, parentId?: string) {
+    const draggedBlock = findBuilderBlock(builderBlocks, id);
+    const parent = parentId ? findBuilderBlock(builderBlocks, parentId) : null;
+    const sourceLocation = findBuilderBlockLocation(builderBlocks, id);
+    const sourceParentId = sourceLocation?.parentId || "";
+    const targetParentId = parentId || "";
+    const adjustedIndex =
+      sourceLocation && sourceParentId === targetParentId && targetIndex > sourceLocation.index
+        ? targetIndex - 1
+        : targetIndex;
+
+    if (
+      !draggedBlock ||
+      !sourceLocation ||
+      !canAcceptChildType(parent, draggedBlock.type) ||
+      (parentId && findBuilderBlock([draggedBlock], parentId)) ||
+      (sourceParentId === targetParentId && adjustedIndex === sourceLocation.index)
+    ) {
+      setSelectedBlockId(id);
+      return;
+    }
+
     rememberBuilderState();
     setBuilderBlocks((current) => {
       const draggedBlock = findBuilderBlock(current, id);
@@ -1078,11 +1185,29 @@ export default function Home() {
       if (!draggedBlock || !canAcceptChildType(parent, draggedBlock.type)) {
         return current;
       }
+      if (parentId && findBuilderBlock([draggedBlock], parentId)) {
+        return current;
+      }
+      const sourceLocation = findBuilderBlockLocation(current, id);
+      if (!sourceLocation) {
+        return current;
+      }
+      const sourceParentId = sourceLocation.parentId || "";
+      const targetParentId = parentId || "";
+      const adjustedIndex =
+        sourceParentId === targetParentId && targetIndex > sourceLocation.index
+          ? targetIndex - 1
+          : targetIndex;
+
+      if (sourceParentId === targetParentId && adjustedIndex === sourceLocation.index) {
+        return current;
+      }
+
       const removed = removeBuilderBlock(current, id);
       if (!removed.removed) {
         return current;
       }
-      return insertBuilderBlockAt(removed.blocks, removed.removed, targetIndex, parentId);
+      return insertBuilderBlockAt(removed.blocks, removed.removed, adjustedIndex, parentId);
     });
     setSelectedBlockId(id);
   }
@@ -1764,7 +1889,7 @@ const paletteCategories: { label: string; icon: string; types: BuilderBlockType[
   {
     label: "Obsah",
     icon: "◈",
-    types: ["header", "hero", "text", "image", "image-hero", "button"]
+    types: ["hero", "text", "image", "image-hero", "button"]
   },
   {
     label: "Specialni bloky",
@@ -1838,6 +1963,7 @@ function BuilderTreePanel(props: {
   onSelectBlock: (id: string) => void;
 }) {
   const [openAddTargetId, setOpenAddTargetId] = useState<string | "body" | null>(null);
+  const [dropPreview, setDropPreview] = useState<BuilderDropPreview>(null);
 
   return (
     <div className="space-y-3 text-sm">
@@ -1852,9 +1978,12 @@ function BuilderTreePanel(props: {
           className="flex items-center gap-2 border-b border-[#e8ebf0] px-3 py-2"
           onDragOver={(event) => {
             event.preventDefault();
-            event.dataTransfer.dropEffect = "copy";
+            event.dataTransfer.dropEffect = getBuilderDropEffect(event);
           }}
-          onDrop={(event) => props.onDropAt(event, props.blocks.length)}
+          onDrop={(event) => {
+            setDropPreview(null);
+            props.onDropAt(event, props.blocks.length);
+          }}
         >
           <span className="flex h-5 w-5 items-center justify-center rounded bg-[#E8F3F6] text-xs font-bold text-[#176273]">
             B
@@ -1885,11 +2014,13 @@ function BuilderTreePanel(props: {
         <div className="p-2">
           <BuilderTreeList
             blocks={props.blocks}
+            dropPreview={dropPreview}
             depth={0}
             openAddTargetId={openAddTargetId}
             selectedBlockId={props.selectedBlockId}
             onAddBlock={props.onAddBlock}
             onDropAt={props.onDropAt}
+            onDropPreview={setDropPreview}
             onOpenAddTarget={setOpenAddTargetId}
             onSelectBlock={props.onSelectBlock}
           />
@@ -1905,12 +2036,14 @@ function BuilderTreePanel(props: {
 
 function BuilderTreeList(props: {
   blocks: BuilderBlock[];
+  dropPreview: BuilderDropPreview;
   depth: number;
   openAddTargetId: string | "body" | null;
   parentId?: string;
   selectedBlockId: string;
   onAddBlock: (type: BuilderBlockType, parentId?: string | null) => void;
   onDropAt: BuilderDropHandler;
+  onDropPreview: (preview: BuilderDropPreview) => void;
   onOpenAddTarget: (id: string | "body" | null) => void;
   onSelectBlock: (id: string) => void;
 }) {
@@ -1933,21 +2066,24 @@ function BuilderTreeList(props: {
         const isSelected = block.id === props.selectedBlockId;
         const canHaveChildren = Boolean(definition.acceptsChildren);
         const childCount = block.children?.length || 0;
+        const dropPosition =
+          props.dropPreview?.blockId === block.id ? props.dropPreview.position : null;
 
         return (
           <div key={block.id}>
             <BuilderDropZone
               index={index}
+              label="Pustit nad"
               parentId={props.parentId}
               onDropAt={props.onDropAt}
             />
             <div
               draggable
-              className={`group flex cursor-grab items-center gap-2 rounded-md border px-2 py-2 active:cursor-grabbing ${
+              className={`group relative flex cursor-grab items-center gap-2 rounded-md border px-2 py-2 active:cursor-grabbing ${
                 isSelected
                   ? "border-[#1F7A8C] bg-[#E8F3F6] ring-2 ring-[#1F7A8C]/15"
                   : "border-transparent bg-white hover:border-line hover:bg-[#F8FAFC]"
-              }`}
+              } ${dropPosition === "inside" ? "ring-2 ring-[#1F7A8C]/40" : ""}`}
               style={{ marginLeft: props.depth * 16 }}
               onClick={() => props.onSelectBlock(block.id)}
               onDragStart={(event) => {
@@ -1956,19 +2092,44 @@ function BuilderTreeList(props: {
                 event.dataTransfer.setData(builderBlockMime, block.id);
               }}
               onDragOver={(event) => {
-                if (!canHaveChildren) {
-                  return;
-                }
                 event.preventDefault();
-                event.dataTransfer.dropEffect = "move";
+                event.stopPropagation();
+                event.dataTransfer.dropEffect = getBuilderDropEffect(event);
+                const draggedBlockId = event.dataTransfer.getData(builderBlockMime);
+                const canDropInside =
+                  canHaveChildren && (!draggedBlockId || draggedBlockId !== block.id);
+                props.onDropPreview({
+                  blockId: block.id,
+                  position: getBlockDropPosition(event, canDropInside)
+                });
+              }}
+              onDragLeave={(event) => {
+                event.stopPropagation();
+                if (isLeavingDropTarget(event)) {
+                  props.onDropPreview(null);
+                }
               }}
               onDrop={(event) => {
-                if (!canHaveChildren) {
+                event.stopPropagation();
+                const draggedBlockId = event.dataTransfer.getData(builderBlockMime);
+                const canDropInside =
+                  canHaveChildren && (!draggedBlockId || draggedBlockId !== block.id);
+                const position = getBlockDropPosition(event, canDropInside);
+                props.onDropPreview(null);
+
+                if (position === "inside" && canDropInside) {
+                  props.onDropAt(event, childCount, block.id);
                   return;
                 }
-                props.onDropAt(event, childCount, block.id);
+
+                props.onDropAt(
+                  event,
+                  position === "before" ? index : index + 1,
+                  props.parentId
+                );
               }}
             >
+              {dropPosition ? <BuilderDropIndicator position={dropPosition} /> : null}
               <span
                 className={`flex h-5 w-5 shrink-0 items-center justify-center rounded text-[10px] font-bold ${
                   canHaveChildren
@@ -2021,6 +2182,7 @@ function BuilderTreeList(props: {
                 <BuilderTreeList
                   {...props}
                   blocks={block.children || []}
+                  dropPreview={props.dropPreview}
                   depth={props.depth + 1}
                   parentId={block.id}
                 />
@@ -2036,6 +2198,38 @@ function BuilderTreeList(props: {
         onDropAt={props.onDropAt}
       />
     </div>
+  );
+}
+
+function BuilderDropIndicator({ position }: { position: BuilderDropPosition }) {
+  const label =
+    position === "before" ? "Nad" : position === "after" ? "Pod" : "Dovnitr";
+
+  if (position === "inside") {
+    return (
+      <span className="pointer-events-none absolute inset-0 z-10 rounded-md border-2 border-dashed border-[#1F7A8C] bg-[#E8F3F6]/45">
+        <span className="absolute right-2 top-1 rounded bg-[#1F7A8C] px-2 py-0.5 text-[10px] font-bold uppercase text-white">
+          {label}
+        </span>
+      </span>
+    );
+  }
+
+  return (
+    <>
+      <span
+        className={`pointer-events-none absolute left-0 right-0 z-10 h-0.5 bg-[#1F7A8C] ${
+          position === "before" ? "-top-1" : "-bottom-1"
+        }`}
+      />
+      <span
+        className={`pointer-events-none absolute right-2 z-10 rounded bg-[#1F7A8C] px-2 py-0.5 text-[10px] font-bold uppercase text-white ${
+          position === "before" ? "-top-3" : "-bottom-3"
+        }`}
+      >
+        {label}
+      </span>
+    </>
   );
 }
 
@@ -2110,7 +2304,35 @@ function BuilderThemePanel(props: {
         label="Font"
         value={props.theme.fontFamily}
         onChange={(value) => updateTheme("fontFamily", value)}
-        placeholder="Arial, sans-serif"
+        placeholder="Montserrat, Arial, sans-serif"
+      />
+      <select
+        className="-mt-1 h-10 w-full rounded-md border border-line bg-white px-3 text-sm outline-none focus:border-[#1F7A8C] focus:ring-2 focus:ring-[#1F7A8C]/20"
+        value={props.theme.fontFamily}
+        onChange={(event) => updateTheme("fontFamily", event.target.value)}
+      >
+        {builderFontOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+      <select
+        className="h-10 w-full rounded-md border border-line bg-white px-3 text-sm outline-none focus:border-[#1F7A8C] focus:ring-2 focus:ring-[#1F7A8C]/20"
+        value={props.theme.defaultFontWeight || "400"}
+        onChange={(event) => updateTheme("defaultFontWeight", event.target.value)}
+      >
+        {builderFontWeightOptions.map((option) => (
+          <option key={option.value} value={option.value}>
+            Vychozi weight: {option.label}
+          </option>
+        ))}
+      </select>
+      <TextInput
+        label="Vychozi weight textu"
+        value={props.theme.defaultFontWeight || "400"}
+        onChange={(value) => updateTheme("defaultFontWeight", value)}
+        placeholder="400"
       />
       <ColorInput
         label="Pozadi tela"
@@ -2136,16 +2358,6 @@ function BuilderThemePanel(props: {
         label="Tlumeny text"
         value={props.theme.mutedColor}
         onChange={(value) => updateTheme("mutedColor", value)}
-      />
-      <ColorInput
-        label="Tlacitko pozadi"
-        value={props.theme.buttonBackground}
-        onChange={(value) => updateTheme("buttonBackground", value)}
-      />
-      <ColorInput
-        label="Tlacitko text"
-        value={props.theme.buttonText}
-        onChange={(value) => updateTheme("buttonText", value)}
       />
       <TextInput
         label="Vychozi padding sekci"
@@ -2206,6 +2418,7 @@ function BuilderCanvas(props: {
   onDropAt: BuilderDropHandler;
   onSelectBlock: (id: string) => void;
 }) {
+  const [dropPreview, setDropPreview] = useState<BuilderDropPreview>(null);
   const selectedBlock = findBuilderBlock(props.blocks, props.selectedBlockId);
   const selectedDefinition = selectedBlock ? getBlockDefinition(selectedBlock.type) : null;
 
@@ -2248,10 +2461,19 @@ function BuilderCanvas(props: {
       <div
         className="builder-checkerboard min-h-0 flex-1 overflow-auto p-6"
         onDragOver={(event) => {
+          if (props.mode !== "edit") {
+            return;
+          }
           event.preventDefault();
-          event.dataTransfer.dropEffect = "copy";
+          event.dataTransfer.dropEffect = getBuilderDropEffect(event);
         }}
-        onDrop={(event) => props.onDropAt(event, props.blockCount)}
+        onDrop={(event) => {
+          if (props.mode !== "edit") {
+            return;
+          }
+          setDropPreview(null);
+          props.onDropAt(event, props.blocks.length);
+        }}
       >
         <div
           className={`relative mx-auto bg-white shadow-xl transition-all ${
@@ -2273,17 +2495,16 @@ function BuilderCanvas(props: {
             />
           ) : props.blocks.length ? (
             <div className="min-h-[560px] overflow-hidden rounded-lg">
-              {props.blocks.map((block) => (
-                <InteractiveCanvasBlock
-                  key={block.id}
-                  block={block}
-                  device={props.device}
-                  selectedBlockId={props.selectedBlockId}
-                  theme={props.theme}
-                  onDropAt={props.onDropAt}
-                  onSelectBlock={props.onSelectBlock}
-                />
-              ))}
+              <CanvasBlockList
+                blocks={props.blocks}
+                device={props.device}
+                dropPreview={dropPreview}
+                selectedBlockId={props.selectedBlockId}
+                theme={props.theme}
+                onDropAt={props.onDropAt}
+                onDropPreview={setDropPreview}
+                onSelectBlock={props.onSelectBlock}
+              />
             </div>
           ) : (
             <div className="flex h-[560px] flex-col items-center justify-center gap-4 p-8 text-center">
@@ -2304,23 +2525,94 @@ function BuilderCanvas(props: {
   );
 }
 
-function InteractiveCanvasBlock(props: {
-  block: BuilderBlock;
+function CanvasBlockList(props: {
+  blocks: BuilderBlock[];
   device: BuilderDevice;
+  dropPreview: BuilderDropPreview;
+  parentId?: string;
   selectedBlockId: string;
   theme: BuilderTheme;
   onDropAt: BuilderDropHandler;
+  onDropPreview: (preview: BuilderDropPreview) => void;
+  onSelectBlock: (id: string) => void;
+}) {
+  if (props.blocks.length === 0) {
+    return (
+      <BuilderDropZone
+        index={0}
+        label={props.parentId ? "Pretahni dovnitr" : "Pretahni do body"}
+        large
+        parentId={props.parentId}
+        onDropAt={props.onDropAt}
+      />
+    );
+  }
+
+  return (
+    <>
+      <BuilderDropZone
+        index={0}
+        label="Pustit nad"
+        parentId={props.parentId}
+        onDropAt={props.onDropAt}
+      />
+      {props.blocks.map((block, index) => (
+        <div key={block.id}>
+          <InteractiveCanvasBlock
+            block={block}
+            device={props.device}
+            dropPreview={props.dropPreview}
+            index={index}
+            parentId={props.parentId}
+            selectedBlockId={props.selectedBlockId}
+            theme={props.theme}
+            onDropAt={props.onDropAt}
+            onDropPreview={props.onDropPreview}
+            onSelectBlock={props.onSelectBlock}
+          />
+          <BuilderDropZone
+            index={index + 1}
+            label="Pustit pod"
+            parentId={props.parentId}
+            onDropAt={props.onDropAt}
+          />
+        </div>
+      ))}
+    </>
+  );
+}
+
+function InteractiveCanvasBlock(props: {
+  block: BuilderBlock;
+  device: BuilderDevice;
+  dropPreview: BuilderDropPreview;
+  index: number;
+  parentId?: string;
+  selectedBlockId: string;
+  theme: BuilderTheme;
+  onDropAt: BuilderDropHandler;
+  onDropPreview: (preview: BuilderDropPreview) => void;
   onSelectBlock: (id: string) => void;
 }) {
   const definition = getBlockDefinition(props.block.type);
   const p = getBuilderBlockProps(props.block, props.device);
   const isSelected = props.block.id === props.selectedBlockId;
   const canHaveChildren = Boolean(definition.acceptsChildren);
+  const dropPosition =
+    props.dropPreview?.blockId === props.block.id ? props.dropPreview.position : null;
+  const dropClass =
+    dropPosition === "before"
+      ? "shadow-[0_-3px_0_#1F7A8C]"
+      : dropPosition === "after"
+        ? "shadow-[0_3px_0_#1F7A8C]"
+        : dropPosition === "inside"
+          ? "ring-2 ring-[#1F7A8C]/45"
+          : "";
   const shellClass = `group relative cursor-pointer transition ${
     isSelected
       ? "builder-selected-block z-10 outline outline-2 outline-[#1F7A8C] ring-4 ring-[#1F7A8C]/20"
       : "outline outline-1 outline-transparent hover:outline-[#1F7A8C]/40"
-  }`;
+  } ${dropClass}`;
   const selectProps = {
     onClick: (event: ReactMouseEvent<HTMLElement>) => {
       event.stopPropagation();
@@ -2331,6 +2623,43 @@ function InteractiveCanvasBlock(props: {
       props.onSelectBlock(props.block.id);
       event.dataTransfer.effectAllowed = "move";
       event.dataTransfer.setData(builderBlockMime, props.block.id);
+    },
+    onDragOver: (event: DragEvent<HTMLElement>) => {
+      event.preventDefault();
+      event.stopPropagation();
+      event.dataTransfer.dropEffect = getBuilderDropEffect(event);
+      const draggedBlockId = event.dataTransfer.getData(builderBlockMime);
+      const canDropInside =
+        canHaveChildren && (!draggedBlockId || draggedBlockId !== props.block.id);
+      props.onDropPreview({
+        blockId: props.block.id,
+        position: getBlockDropPosition(event, canDropInside)
+      });
+    },
+    onDragLeave: (event: DragEvent<HTMLElement>) => {
+      event.stopPropagation();
+      if (isLeavingDropTarget(event)) {
+        props.onDropPreview(null);
+      }
+    },
+    onDrop: (event: DragEvent<HTMLElement>) => {
+      event.stopPropagation();
+      const draggedBlockId = event.dataTransfer.getData(builderBlockMime);
+      const canDropInside =
+        canHaveChildren && (!draggedBlockId || draggedBlockId !== props.block.id);
+      const position = getBlockDropPosition(event, canDropInside);
+      props.onDropPreview(null);
+
+      if (position === "inside" && canDropInside) {
+        props.onDropAt(event, props.block.children?.length || 0, props.block.id);
+        return;
+      }
+
+      props.onDropAt(
+        event,
+        position === "before" ? props.index : props.index + 1,
+        props.parentId
+      );
     }
   };
 
@@ -2357,34 +2686,22 @@ function InteractiveCanvasBlock(props: {
     return (
       <section
         {...selectProps}
-        className={`${shellClass} flex flex-col gap-3`}
+        className={`${shellClass} flex flex-col`}
         style={style}
-        onDragOver={(event) => {
-          event.preventDefault();
-          event.dataTransfer.dropEffect = "copy";
-        }}
-        onDrop={(event) =>
-          props.onDropAt(event, props.block.children?.length || 0, props.block.id)
-        }
       >
+        {dropPosition ? <BuilderDropIndicator position={dropPosition} /> : null}
         <CanvasBlockLabel label={definition.label} />
-        {props.block.children?.length ? (
-          props.block.children.map((child) => (
-            <InteractiveCanvasBlock
-              key={child.id}
-              block={child}
-              device={props.device}
-              selectedBlockId={props.selectedBlockId}
-              theme={props.theme}
-              onDropAt={props.onDropAt}
-              onSelectBlock={props.onSelectBlock}
-            />
-          ))
-        ) : (
-          <div className="rounded-md border border-dashed border-white/70 bg-white/20 p-4 text-center text-sm font-semibold">
-            Pretahni sem text, tlacitko nebo dalsi blok.
-          </div>
-        )}
+        <CanvasBlockList
+          blocks={props.block.children || []}
+          device={props.device}
+          dropPreview={props.dropPreview}
+          parentId={props.block.id}
+          selectedBlockId={props.selectedBlockId}
+          theme={props.theme}
+          onDropAt={props.onDropAt}
+          onDropPreview={props.onDropPreview}
+          onSelectBlock={props.onSelectBlock}
+        />
       </section>
     );
   }
@@ -2393,11 +2710,16 @@ function InteractiveCanvasBlock(props: {
     return (
       <div
         {...selectProps}
-        className={`${shellClass} px-1 py-1`}
+        className={shellClass}
         style={{
+          background: p.backgroundColor || "transparent",
+          boxSizing: "border-box",
           color: p.textColor || props.theme.textColor,
+          fontFamily: p.fontFamily || props.theme.fontFamily,
           fontSize: p.fontSize || props.theme.defaultTextSize,
+          fontWeight: p.fontWeight || props.theme.defaultFontWeight || "400",
           lineHeight: p.lineHeight || props.theme.defaultLineHeight,
+          padding: p.padding || "24px 30px",
           textAlign: (p.align as CSSProperties["textAlign"]) || "left"
         }}
       >
@@ -2421,6 +2743,8 @@ function InteractiveCanvasBlock(props: {
             background: p.backgroundColor || props.theme.buttonBackground,
             borderRadius: p.borderRadius || "8px",
             color: p.textColor || props.theme.buttonText,
+            fontFamily: p.fontFamily || props.theme.fontFamily,
+            fontWeight: p.fontWeight || "700",
             padding: p.innerPadding || "12px 24px"
           }}
         >
@@ -2500,8 +2824,15 @@ function InteractiveCanvasBlock(props: {
     return (
       <section
         {...selectProps}
-        className={`${shellClass} mx-auto max-w-[380px] rounded-lg p-6 text-center`}
-        style={{ background: p.backgroundColor || "#e9f6fc", color: props.theme.textColor }}
+        className={`${shellClass} mx-auto text-center`}
+        style={{
+          background: p.backgroundColor || "#e9f6fc",
+          borderRadius: p.borderRadius || "12px",
+          boxSizing: "border-box",
+          color: props.theme.textColor,
+          maxWidth: p.cardWidth || "380px",
+          padding: p.padding || "40px"
+        }}
       >
         <CanvasBlockLabel label={definition.label} />
         <h3 className="text-base font-bold leading-tight">{p.title || "Kupon"}</h3>
@@ -3284,6 +3615,14 @@ function composeSpacingValue(value: {
 function getInspectorSelectOptions(key: string) {
   const normalized = key.toLowerCase();
 
+  if (normalized === "fontfamily") {
+    return builderFontOptions;
+  }
+
+  if (normalized === "fontweight") {
+    return builderFontWeightOptions;
+  }
+
   if (normalized === "align") {
     return [
       { label: "Left", value: "left" },
@@ -3496,16 +3835,6 @@ function BuilderControls(props: {
             label="Text"
             value={props.theme.textColor}
             onChange={(value) => updateTheme("textColor", value)}
-          />
-          <ColorInput
-            label="Tlacitko pozadi"
-            value={props.theme.buttonBackground}
-            onChange={(value) => updateTheme("buttonBackground", value)}
-          />
-          <ColorInput
-            label="Tlacitko text"
-            value={props.theme.buttonText}
-            onChange={(value) => updateTheme("buttonText", value)}
           />
         </div>
       </section>
@@ -3811,13 +4140,21 @@ function BuilderDropZone(props: {
             ? "border-line bg-white text-muted"
             : "border-transparent text-transparent"
       }`}
-      onDragEnter={() => setDragCounter((c) => c + 1)}
-      onDragLeave={() => setDragCounter((c) => Math.max(0, c - 1))}
+      onDragEnter={(event) => {
+        event.stopPropagation();
+        setDragCounter((c) => c + 1);
+      }}
+      onDragLeave={(event) => {
+        event.stopPropagation();
+        setDragCounter((c) => Math.max(0, c - 1));
+      }}
       onDragOver={(event) => {
         event.preventDefault();
-        event.dataTransfer.dropEffect = "copy";
+        event.stopPropagation();
+        event.dataTransfer.dropEffect = getBuilderDropEffect(event);
       }}
       onDrop={(event) => {
+        event.stopPropagation();
         setDragCounter(0);
         props.onDropAt(event, props.index, props.parentId);
       }}

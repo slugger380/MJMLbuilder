@@ -60,6 +60,7 @@ export type BuilderBlock = {
 export type BuilderTheme = {
   width: string;
   fontFamily: string;
+  defaultFontWeight: string;
   bodyBackground: string;
   primaryColor: string;
   sectionBackground: string;
@@ -78,14 +79,15 @@ export type BuilderTheme = {
 
 export const defaultBuilderTheme: BuilderTheme = {
   width: "600px",
-  fontFamily: "Arial, sans-serif",
-  bodyBackground: "#f6f6f6",
-  primaryColor: "#1a90e9",
+  fontFamily: "Montserrat, Arial, sans-serif",
+  defaultFontWeight: "400",
+  bodyBackground: "#ffffff",
+  primaryColor: "#d70339",
   sectionBackground: "#ffffff",
-  textColor: "#333333",
+  textColor: "#000000",
   mutedColor: "#777777",
   buttonBackground: "#eeeeee",
-  buttonText: "#1a90e9",
+  buttonText: "#d70339",
   defaultSectionPadding: "24px 30px",
   defaultTextSize: "16px",
   defaultLineHeight: "24px",
@@ -140,7 +142,6 @@ export const builderBlockDefinitions: BuilderBlockDefinition[] = [
     acceptsChildren: true,
     childTypes: [
       "section",
-      "header",
       "hero",
       "text",
       "button",
@@ -240,7 +241,9 @@ export const builderBlockDefinitions: BuilderBlockDefinition[] = [
       align: "left",
       backgroundColor: "#ffffff",
       textColor: "",
+      fontFamily: "",
       fontSize: "16px",
+      fontWeight: "",
       lineHeight: "24px",
       padding: "24px 30px",
       sectionAttributes: "",
@@ -252,7 +255,9 @@ export const builderBlockDefinitions: BuilderBlockDefinition[] = [
       { key: "align", label: "Zarovnani", type: "text" },
       { key: "backgroundColor", label: "Pozadi", type: "color" },
       { key: "textColor", label: "Barva textu", type: "color" },
+      { key: "fontFamily", label: "Font", type: "text" },
       { key: "fontSize", label: "Velikost textu", type: "text" },
+      { key: "fontWeight", label: "Weight", type: "text" },
       { key: "lineHeight", label: "Radkovani", type: "text" },
       { key: "padding", label: "Vnitrni okraje", type: "text" },
       { key: "sectionAttributes", label: "Pokrocile atributy mj-section", type: "code" },
@@ -270,6 +275,8 @@ export const builderBlockDefinitions: BuilderBlockDefinition[] = [
       align: "center",
       backgroundColor: "",
       textColor: "",
+      fontFamily: "",
+      fontWeight: "700",
       borderRadius: "8px",
       innerPadding: "12px 24px",
       sectionPadding: "10px 30px",
@@ -284,6 +291,8 @@ export const builderBlockDefinitions: BuilderBlockDefinition[] = [
       { key: "align", label: "Zarovnani", type: "text" },
       { key: "backgroundColor", label: "Pozadi tlacitka", type: "color" },
       { key: "textColor", label: "Text tlacitka", type: "color" },
+      { key: "fontFamily", label: "Font", type: "text" },
+      { key: "fontWeight", label: "Weight", type: "text" },
       { key: "borderRadius", label: "Zaobleni", type: "text" },
       { key: "innerPadding", label: "Okraje tlacitka", type: "text" },
       { key: "sectionPadding", label: "Okraje sekce", type: "text" },
@@ -403,7 +412,10 @@ export const builderBlockDefinitions: BuilderBlockDefinition[] = [
       buttonBackground: "",
       buttonText: "",
       titleSize: "16px",
-      padding: "10px 15px",
+      cardWidth: "380px",
+      borderRadius: "12px",
+      padding: "40px",
+      sectionPadding: "10px 15px",
       sectionAttributes: "",
       columnAttributes: "",
       titleAttributes: "",
@@ -422,7 +434,10 @@ export const builderBlockDefinitions: BuilderBlockDefinition[] = [
       { key: "buttonBackground", label: "Pozadi tlacitka", type: "color" },
       { key: "buttonText", label: "Text tlacitka", type: "color" },
       { key: "titleSize", label: "Velikost nadpisu", type: "text" },
+      { key: "cardWidth", label: "Sirka karty", type: "text" },
+      { key: "borderRadius", label: "Zaobleni karty", type: "text" },
       { key: "padding", label: "Vnitrni okraje", type: "text" },
+      { key: "sectionPadding", label: "Vnejsi okraje", type: "text" },
       { key: "sectionAttributes", label: "Pokrocile atributy mj-section", type: "code" },
       { key: "columnAttributes", label: "Pokrocile atributy mj-column", type: "code" },
       { key: "titleAttributes", label: "Pokrocile atributy nadpisu", type: "code" },
@@ -765,23 +780,31 @@ export const builderBlockDefinitions: BuilderBlockDefinition[] = [
   }
 ];
 
-export const defaultBuilderBlocks: BuilderBlock[] = [
-  createBuilderBlock("header", "block-header"),
-  createBuilderBlock("coupon", "block-coupon"),
-  createBuilderBlock("footer", "block-footer")
-];
+export const defaultBuilderBlocks: BuilderBlock[] = [];
 
 export function createBuilderBlock(
   type: BuilderBlockType,
   id = `${type}-${Date.now()}-${Math.random().toString(16).slice(2)}`
 ): BuilderBlock {
   const definition = getBlockDefinition(type);
+  const mobileDefaults = getDefaultMobileBlockProps(type);
   return {
     id,
     type,
     props: { ...definition.defaults },
+    mobileProps: Object.keys(mobileDefaults).length ? mobileDefaults : undefined,
     children: definition.acceptsChildren ? [] : undefined
   };
+}
+
+function getDefaultMobileBlockProps(type: BuilderBlockType): Record<string, string> {
+  if (type === "coupon") {
+    return {
+      cardWidth: "300px"
+    };
+  }
+
+  return {};
 }
 
 export function getBlockDefinition(type: BuilderBlockType): BuilderBlockDefinition {
@@ -797,7 +820,11 @@ export function getBuilderBlockProps(
   device: BuilderRenderDevice = "desktop"
 ): Record<string, string> {
   if (device === "mobile") {
-    return { ...block.props, ...(block.mobileProps || {}) };
+    return {
+      ...block.props,
+      ...getDefaultMobileBlockProps(block.type),
+      ...(block.mobileProps || {})
+    };
   }
 
   return block.props;
@@ -990,9 +1017,13 @@ function renderBlock(
 
     case "text":
       if (context === "child") {
-        return `<mj-text align="${attr(p.align, "left")}" font-size="${attr(
+        return `<mj-text align="${attr(p.align, "left")}" font-family="${attr(
+          p.fontFamily || theme.fontFamily
+        )}" font-size="${attr(
           p.fontSize,
           theme.defaultTextSize || "16px"
+        )}" font-weight="${attr(
+          p.fontWeight || theme.defaultFontWeight || "400"
         )}" line-height="${attr(
           p.lineHeight,
           theme.defaultLineHeight || "24px"
@@ -1003,9 +1034,13 @@ function renderBlock(
       }
       return section(
         column(`
-          <mj-text align="${attr(p.align, "left")}" font-size="${attr(
+          <mj-text align="${attr(p.align, "left")}" font-family="${attr(
+            p.fontFamily || theme.fontFamily
+          )}" font-size="${attr(
             p.fontSize,
             "16px"
+          )}" font-weight="${attr(
+            p.fontWeight || theme.defaultFontWeight || "400"
           )}" line-height="${attr(p.lineHeight, "24px")}" color="${attr(
             p.textColor || theme.textColor
           )}" padding="0"${rawAttributes(p.textAttributes)}>${richText(p.text)}</mj-text>
@@ -1026,6 +1061,8 @@ function renderBlock(
         )}" color="${attr(p.textColor || theme.buttonText)}" border-radius="${attr(
           p.borderRadius,
           "8px"
+        )}" font-family="${attr(p.fontFamily || theme.fontFamily)}" font-weight="${attr(
+          p.fontWeight || "700"
         )}" inner-padding="${attr(p.innerPadding, "12px 24px")}" padding="${attr(
           p.sectionPadding,
           "0 0 12px 0"
@@ -1038,6 +1075,8 @@ function renderBlock(
         )}" color="${attr(p.textColor || theme.buttonText)}" border-radius="${attr(
           p.borderRadius,
           "8px"
+        )}" font-family="${attr(p.fontFamily || theme.fontFamily)}" font-weight="${attr(
+          p.fontWeight || "700"
         )}" inner-padding="${attr(p.innerPadding, "12px 24px")}"${rawAttributes(
           p.buttonAttributes
         )}>${richText(
@@ -1164,10 +1203,16 @@ function renderBlock(
           <mj-text align="center" font-size="10px" color="${attr(theme.mutedColor)}" padding="0">${richText(
           p.validFrom
         )}</mj-text>
-        `, { attributes: p.columnAttributes }),
+        `, {
+          width: p.cardWidth || "380px",
+          padding: p.padding || "40px",
+          attributes: `background-color="${attr(
+            colorValue(p.backgroundColor, "#e9f6fc")
+          )}" border-radius="${attr(p.borderRadius, "12px")}" ${p.columnAttributes || ""}`
+        }),
         {
-          backgroundColor: colorValue(p.backgroundColor, "#e9f6fc"),
-          padding: p.padding || "10px 15px",
+          backgroundColor: colorValue(theme.sectionBackground, "#ffffff"),
+          padding: p.sectionPadding || "10px 15px",
           attributes: p.sectionAttributes
         }
       );
@@ -1558,6 +1603,7 @@ export function buildBuilderMjml(
   <mj-head>
     ${theme.headTitle ? `<mj-title>${text(theme.headTitle)}</mj-title>` : ""}
     ${theme.previewText ? `<mj-preview>${text(theme.previewText)}</mj-preview>` : ""}
+    <mj-font name="Montserrat" href="https://fonts.googleapis.com/css?family=Montserrat:400,500,600,700,800" />
     ${theme.breakpoint ? `<mj-breakpoint width="${attr(theme.breakpoint)}" />` : ""}
     <mj-attributes>
       <mj-all font-family="${attr(theme.fontFamily)}"${rawAttributes(
@@ -1569,7 +1615,9 @@ export function buildBuilderMjml(
       )}" padding="${attr(theme.defaultSectionPadding)}" />
       <mj-text font-size="${attr(theme.defaultTextSize)}" line-height="${attr(
         theme.defaultLineHeight
-      )}" color="${attr(theme.textColor)}" />
+      )}" font-weight="${attr(theme.defaultFontWeight || "400")}" color="${attr(
+        theme.textColor
+      )}" />
       <mj-button background-color="${attr(theme.buttonBackground)}" color="${attr(
         theme.buttonText
       )}" />

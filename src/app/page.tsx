@@ -6,7 +6,6 @@ import {
   useState,
   type CSSProperties,
   type DragEvent,
-  type FormEvent,
   type MouseEvent as ReactMouseEvent
 } from "react";
 import type {
@@ -938,7 +937,7 @@ export default function Home() {
     setBuilderTheme(theme);
   }
 
-  async function handleSubmit(event: FormEvent<HTMLFormElement>) {
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
 
     if (form.templateId === "mjml-builder") {
@@ -1150,17 +1149,11 @@ export default function Home() {
   }
 
   function deleteBuilderBlock(id: string) {
-    let nextSelectedId = "";
     rememberBuilderState();
-    setBuilderBlocks((current) => {
-      const next = removeBuilderBlock(current, id).blocks;
-      if (selectedBlockId === id) {
-        nextSelectedId = next[0]?.id || "";
-      }
-      return next;
-    });
+    const { blocks: nextBlocks } = removeBuilderBlock(builderBlocks, id);
+    setBuilderBlocks(nextBlocks);
     if (selectedBlockId === id) {
-      setSelectedBlockId(nextSelectedId);
+      setSelectedBlockId(nextBlocks[0]?.id || "");
     }
   }
 
@@ -1244,6 +1237,7 @@ export default function Home() {
         onReset={resetBuilder}
         onSelectBlock={setSelectedBlockId}
         onSetActiveTab={setActiveTab}
+        onClearImportStatus={() => setBuilderImportStatus("")}
         onSwitchMode={switchMode}
         onThemeChange={updateBuilderTheme}
         onUndo={undoBuilder}
@@ -1419,6 +1413,7 @@ function BuilderAppShell(props: {
   onReset: () => void;
   onSelectBlock: (id: string) => void;
   onSetActiveTab: (tab: Tab) => void;
+  onClearImportStatus: () => void;
   onSwitchMode: (mode: TemplateId) => void;
   onThemeChange: (theme: BuilderTheme) => void;
   onUndo: () => void;
@@ -1497,7 +1492,7 @@ function BuilderAppShell(props: {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [props]);
+  }, [props.selectedBlockId, props.onRedo, props.onUndo, props.onDuplicateBlock, props.onDeleteBlock, props.onMoveBlock]);
 
   return (
     <main className="flex h-screen min-h-screen flex-col overflow-hidden bg-[#F5F6F8] text-ink">
@@ -1610,7 +1605,11 @@ function BuilderAppShell(props: {
           <button
             type="button"
             className="rounded-md border border-line bg-white px-3 py-1.5 text-sm font-semibold text-ink transition hover:bg-[#F4F7FB]"
-            onClick={props.onReset}
+            onClick={() => {
+              if (window.confirm("Opravdu chcete smazat vsechny bloky a obnovit vychozi nastaveni?")) {
+                props.onReset();
+              }
+            }}
           >
             Reset
           </button>
@@ -1629,8 +1628,18 @@ function BuilderAppShell(props: {
       </header>
 
       {props.importStatus ? (
-        <div className="shrink-0 border-b border-line bg-[#F8FAFC] px-4 py-2 text-xs font-semibold text-muted">
-          {props.importStatus}
+        <div className="flex shrink-0 items-center gap-3 border-b border-line bg-[#F8FAFC] px-4 py-2">
+          <span className="min-w-0 flex-1 text-xs font-semibold text-muted">
+            {props.importStatus}
+          </span>
+          <button
+            type="button"
+            className="shrink-0 rounded px-1.5 py-0.5 text-xs font-bold text-muted hover:bg-[#eef0f4]"
+            onClick={props.onClearImportStatus}
+            title="Zavrít"
+          >
+            ✕
+          </button>
         </div>
       ) : null}
 
@@ -1735,6 +1744,9 @@ function BuilderAppShell(props: {
             blocks={props.blocks}
             selectedBlockId={props.selectedBlockId}
             device={props.device}
+            onDeleteBlock={props.onDeleteBlock}
+            onDuplicateBlock={props.onDuplicateBlock}
+            onMoveBlock={props.onMoveBlock}
             onUpdateBlock={props.onUpdateBlock}
           />
         </aside>
@@ -1743,38 +1755,77 @@ function BuilderAppShell(props: {
   );
 }
 
+const paletteCategories: { label: string; icon: string; types: BuilderBlockType[] }[] = [
+  {
+    label: "Kontejnery",
+    icon: "▣",
+    types: ["section", "wrapper", "two-column", "three-column"]
+  },
+  {
+    label: "Obsah",
+    icon: "◈",
+    types: ["header", "hero", "text", "image", "image-hero", "button"]
+  },
+  {
+    label: "Specialni bloky",
+    icon: "◆",
+    types: ["coupon", "card", "quote", "navbar", "social", "table", "accordion", "carousel"]
+  },
+  {
+    label: "Utility",
+    icon: "◦",
+    types: ["divider", "spacer", "footer", "raw-html", "raw-mjml"]
+  }
+];
+
 function BuilderPalette(props: {
   onAddBlock: (type: BuilderBlockType, parentId?: string | null) => void;
 }) {
   return (
-    <div className="space-y-3">
+    <div className="space-y-4">
       <div>
-        <h2 className="text-sm font-bold text-ink">Components</h2>
+        <h2 className="text-sm font-bold text-ink">Komponenty</h2>
         <p className="mt-1 text-xs leading-5 text-muted">
-          Klikni pro pridani. Pokud je vybrany kontejner, prida se dovnitr.
+          Klikni pro pridani nebo pretahni na platno. Kdyz je kontejner vybran, prida se dovnitr.
         </p>
       </div>
-      <div className="grid grid-cols-2 gap-1.5">
-        {builderBlockDefinitions.map((definition) => (
-          <button
-            key={definition.type}
-            type="button"
-            draggable
-            className="min-h-12 rounded border border-[#d9dde5] bg-white p-2 text-left text-xs font-semibold text-ink transition hover:border-[#6D5EF5] hover:bg-[#F4F2FF]"
-            onClick={() => props.onAddBlock(definition.type)}
-            onDragStart={(event) => {
-              event.dataTransfer.effectAllowed = "copy";
-              event.dataTransfer.setData(builderPaletteMime, definition.type);
-            }}
-            title={definition.description}
-          >
-            <span className="block">{definition.label}</span>
-            <span className="mt-1 block text-[11px] font-normal leading-4 text-muted">
-              {definition.type}
-            </span>
-          </button>
-        ))}
-      </div>
+      {paletteCategories.map((category) => {
+        const defs = category.types
+          .map((type) => builderBlockDefinitions.find((d) => d.type === type))
+          .filter(Boolean) as typeof builderBlockDefinitions;
+
+        return (
+          <div key={category.label}>
+            <p className="mb-1.5 flex items-center gap-1.5 text-[11px] font-bold uppercase tracking-[0.08em] text-muted">
+              <span>{category.icon}</span>
+              {category.label}
+            </p>
+            <div className="grid grid-cols-2 gap-1.5">
+              {defs.map((definition) => (
+                <button
+                  key={definition.type}
+                  type="button"
+                  draggable
+                  className="min-h-12 rounded border border-[#d9dde5] bg-white p-2 text-left text-xs font-semibold text-ink transition hover:border-[#6D5EF5] hover:bg-[#F4F2FF]"
+                  onClick={() => props.onAddBlock(definition.type)}
+                  onDragStart={(event) => {
+                    event.dataTransfer.effectAllowed = "copy";
+                    event.dataTransfer.setData(builderPaletteMime, definition.type);
+                  }}
+                  title={definition.description}
+                >
+                  <span className="block">{definition.label}</span>
+                  <span className="mt-1 block text-[11px] font-normal leading-4 text-muted">
+                    {definition.description.length > 40
+                      ? definition.description.slice(0, 38) + "…"
+                      : definition.description}
+                  </span>
+                </button>
+              ))}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -2038,143 +2089,6 @@ function BuilderAddMenu(props: {
   );
 }
 
-function BuilderLayers(props: {
-  blocks: BuilderBlock[];
-  selectedBlockId: string;
-  onAddBlock: (type: BuilderBlockType, parentId?: string | null) => void;
-  onDropAt: BuilderDropHandler;
-  onSelectBlock: (id: string) => void;
-}) {
-  return (
-    <div className="space-y-3">
-      <h2 className="text-sm font-bold text-ink">Email structure</h2>
-      <p className="text-xs leading-5 text-muted">
-        Pretahuj bloky mezi sebou nebo je pust primo na kontejner. Klavesy:
-        Delete smaze, Ctrl+D kopiruje, Alt+Sipky presouvaji.
-      </p>
-      <div className="space-y-1 text-sm">
-        <div className="flex items-center gap-2 rounded px-1 py-1 font-semibold text-ink">
-          <span>⌄</span>
-          <span>Head</span>
-        </div>
-        <div className="ml-5 space-y-1 text-muted">
-          <div className="rounded px-1 py-1">› Default attributes</div>
-          <div className="rounded px-1 py-1">◎ Subject preview</div>
-        </div>
-        <div className="mt-3 flex items-center gap-2 rounded px-1 py-1 font-semibold text-ink">
-          <span>⌄</span>
-          <span>Body</span>
-          <button
-            type="button"
-            className="ml-auto rounded border border-dashed border-[#6D5EF5] px-1.5 text-[#6D5EF5]"
-            onClick={() => props.onAddBlock("section")}
-          >
-            +
-          </button>
-        </div>
-      </div>
-      <BuilderLayerList {...props} blocks={props.blocks} depth={0} />
-    </div>
-  );
-}
-
-function BuilderLayerList(props: {
-  blocks: BuilderBlock[];
-  depth: number;
-  selectedBlockId: string;
-  parentId?: string;
-  onDropAt: BuilderDropHandler;
-  onSelectBlock: (id: string) => void;
-}) {
-  if (props.blocks.length === 0) {
-    return (
-      <BuilderDropZone
-        index={0}
-        label={props.parentId ? "Pretahni sem vnoreny blok" : "Pretahni blok sem"}
-        large
-        parentId={props.parentId}
-        onDropAt={props.onDropAt}
-      />
-    );
-  }
-
-  return (
-    <div className="space-y-2">
-      {props.blocks.map((block, index) => {
-        const definition = getBlockDefinition(block.type);
-        const isSelected = block.id === props.selectedBlockId;
-        const canHaveChildren = Boolean(definition.acceptsChildren);
-
-        return (
-          <div key={block.id}>
-            <BuilderDropZone
-              index={index}
-              parentId={props.parentId}
-              onDropAt={props.onDropAt}
-            />
-            <div
-              draggable
-              className={`cursor-grab rounded-md border bg-white p-2 shadow-sm active:cursor-grabbing ${
-                isSelected
-                  ? "border-[#1F7A8C] ring-2 ring-[#1F7A8C]/15"
-                  : "border-line"
-              }`}
-              style={{ marginLeft: props.depth * 12 }}
-              onClick={() => props.onSelectBlock(block.id)}
-              onDragStart={(event) => {
-                props.onSelectBlock(block.id);
-                event.dataTransfer.effectAllowed = "move";
-                event.dataTransfer.setData(builderBlockMime, block.id);
-              }}
-              onDragOver={(event) => {
-                if (!canHaveChildren) {
-                  return;
-                }
-                event.preventDefault();
-                event.dataTransfer.dropEffect = "move";
-              }}
-              onDrop={(event) => {
-                if (!canHaveChildren) {
-                  return;
-                }
-                props.onDropAt(event, block.children?.length || 0, block.id);
-              }}
-            >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <p className="truncate text-sm font-semibold text-ink">
-                    {index + 1}. {definition.label}
-                  </p>
-                  <p className="truncate text-xs text-muted">
-                    {definition.type}
-                    {canHaveChildren ? ` / ${block.children?.length || 0} deti` : ""}
-                  </p>
-                </div>
-              </div>
-            </div>
-            {canHaveChildren ? (
-              <div className="mt-2 border-l border-line pl-2">
-                <BuilderLayerList
-                  {...props}
-                  blocks={block.children || []}
-                  depth={props.depth + 1}
-                  parentId={block.id}
-                />
-              </div>
-            ) : null}
-          </div>
-        );
-      })}
-      <BuilderDropZone
-        index={props.blocks.length}
-        label={props.parentId ? "Pustit do kontejneru" : "Pustit na konec"}
-        parentId={props.parentId}
-        onDropAt={props.onDropAt}
-      />
-    </div>
-  );
-}
-
 function BuilderThemePanel(props: {
   theme: BuilderTheme;
   onThemeChange: (theme: BuilderTheme) => void;
@@ -2217,6 +2131,11 @@ function BuilderThemePanel(props: {
         label="Text"
         value={props.theme.textColor}
         onChange={(value) => updateTheme("textColor", value)}
+      />
+      <ColorInput
+        label="Tlumeny text"
+        value={props.theme.mutedColor}
+        onChange={(value) => updateTheme("mutedColor", value)}
       />
       <ColorInput
         label="Tlacitko pozadi"
@@ -2309,15 +2228,21 @@ function BuilderCanvas(props: {
             </button>
           ))}
         </div>
-        <div className="text-right text-xs font-semibold text-muted">
-          <p>
-            {props.device === "desktop" ? "600px" : "390px"} -{" "}
-            {props.isCompiling ? "Kompiluji..." : `${props.blockCount} bloku`}
-          </p>
-          <p>
+        <div className="flex items-center gap-3 text-xs font-semibold text-muted">
+          {props.isCompiling ? (
+            <span className="flex items-center gap-1.5 rounded-md bg-amber-50 px-2 py-1 text-amber-700">
+              <span className="inline-block h-2 w-2 animate-pulse rounded-full bg-amber-400" />
+              Kompiluji...
+            </span>
+          ) : (
+            <span className="rounded-md bg-emerald-50 px-2 py-1 text-emerald-700">
+              {props.blockCount} {props.blockCount === 1 ? "blok" : "bloku"}
+            </span>
+          )}
+          <span>
             Vybrano:{" "}
-            <span className="text-ink">{selectedDefinition?.label || "nic"}</span>
-          </p>
+            <span className="text-ink">{selectedDefinition?.label || "—"}</span>
+          </span>
         </div>
       </div>
       <div
@@ -2361,8 +2286,16 @@ function BuilderCanvas(props: {
               ))}
             </div>
           ) : (
-            <div className="flex h-[560px] items-center justify-center p-6 text-center text-sm text-muted">
-              Pretahni sem prvni blok.
+            <div className="flex h-[560px] flex-col items-center justify-center gap-4 p-8 text-center">
+              <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-[#E8F3F6] text-3xl text-[#1F7A8C]">
+                ✉
+              </div>
+              <div>
+                <p className="text-base font-bold text-ink">Platno je prazdne</p>
+                <p className="mt-2 text-sm leading-6 text-muted">
+                  Pretahni blok z palety vlevo nebo klikni na tlacitko <strong>+</strong> v panelu Struktura.
+                </p>
+              </div>
             </div>
           )}
         </div>
@@ -2851,6 +2784,9 @@ function BuilderInspector(props: {
   blocks: BuilderBlock[];
   device: BuilderDevice;
   selectedBlockId: string;
+  onDeleteBlock: (id: string) => void;
+  onDuplicateBlock: (id: string) => void;
+  onMoveBlock: (id: string, direction: -1 | 1) => void;
   onUpdateBlock: (
     id: string,
     key: string,
@@ -2870,6 +2806,46 @@ function BuilderInspector(props: {
             : "Vyber blok"}
         </p>
       </div>
+      {props.block ? (
+        <div className="flex shrink-0 items-center gap-1 border-b border-[#d9dde5] bg-[#fafafa] px-3 py-2">
+          <button
+            type="button"
+            title="Presunout nahoru (Alt+↑)"
+            className="flex h-7 items-center gap-1 rounded-md border border-line bg-white px-2 text-xs font-semibold text-ink transition hover:bg-[#F4F7FB] active:scale-95"
+            onClick={() => props.onMoveBlock(props.block!.id, -1)}
+          >
+            ↑
+          </button>
+          <button
+            type="button"
+            title="Presunout dolu (Alt+↓)"
+            className="flex h-7 items-center gap-1 rounded-md border border-line bg-white px-2 text-xs font-semibold text-ink transition hover:bg-[#F4F7FB] active:scale-95"
+            onClick={() => props.onMoveBlock(props.block!.id, 1)}
+          >
+            ↓
+          </button>
+          <button
+            type="button"
+            title="Duplikovat blok (Ctrl+D)"
+            className="flex h-7 items-center gap-1 rounded-md border border-line bg-white px-2 text-xs font-semibold text-ink transition hover:bg-[#F4F7FB] active:scale-95"
+            onClick={() => props.onDuplicateBlock(props.block!.id)}
+          >
+            Kopie
+          </button>
+          <button
+            type="button"
+            title="Smazat blok (Delete)"
+            className="ml-auto flex h-7 items-center gap-1 rounded-md border border-red-200 bg-red-50 px-2 text-xs font-semibold text-red-700 transition hover:bg-red-100 active:scale-95"
+            onClick={() => {
+              if (window.confirm(`Smazat blok "${props.definition?.label}"?`)) {
+                props.onDeleteBlock(props.block!.id);
+              }
+            }}
+          >
+            Smazat
+          </button>
+        </div>
+      ) : null}
       <div className="min-h-0 flex-1 overflow-auto p-5">
         {props.block && props.definition ? (
           <div className="space-y-6">
@@ -2892,8 +2868,20 @@ function BuilderInspector(props: {
             />
           </div>
         ) : (
-          <div className="rounded-md border border-dashed border-line bg-[#F8FAFC] p-4 text-sm text-muted">
-            Vyber blok ve vrstvach nebo pridej novy blok z palety.
+          <div className="space-y-3">
+            <div className="rounded-md border border-dashed border-line bg-[#F8FAFC] p-4 text-sm text-muted">
+              Vyber blok ve vrstvach nebo pridej novy blok z palety.
+            </div>
+            <div className="rounded-md border border-[#d9dde5] bg-white p-3">
+              <p className="text-xs font-bold uppercase tracking-[0.08em] text-muted">Klavesove zkratky</p>
+              <ul className="mt-2 space-y-1.5 text-xs leading-5 text-muted">
+                <li><kbd className="rounded bg-[#F4F7FB] px-1.5 py-0.5 font-mono font-semibold text-ink">Delete</kbd> — smazat vybrane blok</li>
+                <li><kbd className="rounded bg-[#F4F7FB] px-1.5 py-0.5 font-mono font-semibold text-ink">Ctrl+D</kbd> — duplikovat blok</li>
+                <li><kbd className="rounded bg-[#F4F7FB] px-1.5 py-0.5 font-mono font-semibold text-ink">Ctrl+Z</kbd> — zpet (undo)</li>
+                <li><kbd className="rounded bg-[#F4F7FB] px-1.5 py-0.5 font-mono font-semibold text-ink">Ctrl+Y</kbd> / <kbd className="rounded bg-[#F4F7FB] px-1.5 py-0.5 font-mono font-semibold text-ink">Ctrl+Shift+Z</kbd> — znovu (redo)</li>
+                <li><kbd className="rounded bg-[#F4F7FB] px-1.5 py-0.5 font-mono font-semibold text-ink">Alt+↑↓</kbd> — presunout blok</li>
+              </ul>
+            </div>
           </div>
         )}
       </div>
@@ -3809,7 +3797,8 @@ function BuilderDropZone(props: {
   parentId?: string;
   onDropAt: BuilderDropHandler;
 }) {
-  const [isOver, setIsOver] = useState(false);
+  const [dragCounter, setDragCounter] = useState(0);
+  const isOver = dragCounter > 0;
 
   return (
     <div
@@ -3822,14 +3811,14 @@ function BuilderDropZone(props: {
             ? "border-line bg-white text-muted"
             : "border-transparent text-transparent"
       }`}
-      onDragEnter={() => setIsOver(true)}
-      onDragLeave={() => setIsOver(false)}
+      onDragEnter={() => setDragCounter((c) => c + 1)}
+      onDragLeave={() => setDragCounter((c) => Math.max(0, c - 1))}
       onDragOver={(event) => {
         event.preventDefault();
         event.dataTransfer.dropEffect = "copy";
       }}
       onDrop={(event) => {
-        setIsOver(false);
+        setDragCounter(0);
         props.onDropAt(event, props.index, props.parentId);
       }}
     >
@@ -4193,5 +4182,5 @@ function IssueDetails({ details }: { details: string }) {
 }
 
 function isHexColor(value: string) {
-  return /^#[0-9a-f]{6}$/i.test(value);
+  return /^#([0-9a-f]{3}|[0-9a-f]{6})$/i.test(value);
 }

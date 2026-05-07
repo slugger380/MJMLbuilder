@@ -10,16 +10,22 @@ export type BuilderRenderDevice = "desktop" | "mobile";
 
 export type BuilderBlockType =
   | "section"
+  | "column"
   | "wrapper"
   | "header"
   | "hero"
   | "text"
   | "button"
   | "image"
+  | "gif"
+  | "video"
   | "image-hero"
   | "coupon"
   | "two-column"
   | "three-column"
+  | "four-column"
+  | "one-third-two-third"
+  | "two-third-one-third"
   | "card"
   | "quote"
   | "navbar"
@@ -27,6 +33,9 @@ export type BuilderBlockType =
   | "table"
   | "accordion"
   | "carousel"
+  | "product"
+  | "dynamic"
+  | "article"
   | "divider"
   | "spacer"
   | "raw-html"
@@ -68,14 +77,74 @@ export type BuilderTheme = {
   mutedColor: string;
   buttonBackground: string;
   buttonText: string;
+  buttonHoverBackground: string;
+  linkColor: string;
   defaultSectionPadding: string;
   defaultTextSize: string;
   defaultLineHeight: string;
+  bodyFontSize: string;
+  bodyLineHeight: string;
+  h1FontSize: string;
+  h1LineHeight: string;
+  h1FontWeight: string;
+  h2FontSize: string;
+  h2LineHeight: string;
+  h2FontWeight: string;
+  h3FontSize: string;
+  h3LineHeight: string;
+  h3FontWeight: string;
+  buttonFontSize: string;
+  buttonFontWeight: string;
+  listSpacing: string;
+  listItemSpacing: string;
   breakpoint: string;
   headTitle: string;
   previewText: string;
   globalAttributes: string;
 };
+
+export type TypographySettings = Pick<
+  BuilderTheme,
+  | "fontFamily"
+  | "defaultFontWeight"
+  | "bodyFontSize"
+  | "bodyLineHeight"
+  | "h1FontSize"
+  | "h1LineHeight"
+  | "h1FontWeight"
+  | "h2FontSize"
+  | "h2LineHeight"
+  | "h2FontWeight"
+  | "h3FontSize"
+  | "h3LineHeight"
+  | "h3FontWeight"
+  | "buttonFontSize"
+  | "buttonFontWeight"
+>;
+
+export type ColorSettings = Pick<
+  BuilderTheme,
+  | "bodyBackground"
+  | "primaryColor"
+  | "sectionBackground"
+  | "textColor"
+  | "mutedColor"
+  | "buttonBackground"
+  | "buttonText"
+  | "buttonHoverBackground"
+  | "linkColor"
+>;
+
+export type ButtonSettings = Pick<
+  BuilderTheme,
+  "buttonBackground" | "buttonText" | "buttonHoverBackground" | "buttonFontSize" | "buttonFontWeight"
+>;
+
+export type ListSettings = Pick<BuilderTheme, "listSpacing" | "listItemSpacing">;
+
+export type LayoutSettings = Pick<BuilderTheme, "width" | "defaultSectionPadding" | "breakpoint">;
+
+export type EmailGlobalSettings = BuilderTheme;
 
 export const defaultBuilderTheme: BuilderTheme = {
   width: "600px",
@@ -88,14 +157,80 @@ export const defaultBuilderTheme: BuilderTheme = {
   mutedColor: "#777777",
   buttonBackground: "#eeeeee",
   buttonText: "#d70339",
+  buttonHoverBackground: "#d9d9d9",
+  linkColor: "#d70339",
   defaultSectionPadding: "24px 30px",
   defaultTextSize: "16px",
   defaultLineHeight: "24px",
+  bodyFontSize: "16px",
+  bodyLineHeight: "24px",
+  h1FontSize: "32px",
+  h1LineHeight: "40px",
+  h1FontWeight: "700",
+  h2FontSize: "24px",
+  h2LineHeight: "32px",
+  h2FontWeight: "700",
+  h3FontSize: "18px",
+  h3LineHeight: "26px",
+  h3FontWeight: "700",
+  buttonFontSize: "14px",
+  buttonFontWeight: "700",
+  listSpacing: "12px",
+  listItemSpacing: "6px",
   breakpoint: "480px",
   headTitle: "",
   previewText: "",
   globalAttributes: ""
 };
+
+const columnContentBlockTypes: BuilderBlockType[] = [
+  "text",
+  "button",
+  "image",
+  "gif",
+  "video",
+  "card",
+  "quote",
+  "navbar",
+  "social",
+  "table",
+  "accordion",
+  "carousel",
+  "product",
+  "dynamic",
+  "article",
+  "divider",
+  "spacer",
+  "raw-html"
+];
+
+const columnLayoutBlockTypes: BuilderBlockType[] = [
+  "two-column",
+  "three-column",
+  "four-column",
+  "one-third-two-third",
+  "two-third-one-third"
+];
+
+function isColumnLayoutType(type: BuilderBlockType) {
+  return columnLayoutBlockTypes.includes(type);
+}
+
+function getLayoutColumnWidths(type: BuilderBlockType) {
+  if (type === "three-column") {
+    return ["33.33%", "33.33%", "33.33%"];
+  }
+  if (type === "four-column") {
+    return ["25%", "25%", "25%", "25%"];
+  }
+  if (type === "one-third-two-third") {
+    return ["33.33%", "66.67%"];
+  }
+  if (type === "two-third-one-third") {
+    return ["66.67%", "33.33%"];
+  }
+  return ["50%", "50%"];
+}
 
 export const builderBlockDefinitions: BuilderBlockDefinition[] = [
   {
@@ -107,6 +242,8 @@ export const builderBlockDefinitions: BuilderBlockDefinition[] = [
       "text",
       "button",
       "image",
+      "gif",
+      "video",
       "card",
       "quote",
       "navbar",
@@ -114,6 +251,9 @@ export const builderBlockDefinitions: BuilderBlockDefinition[] = [
       "table",
       "accordion",
       "carousel",
+      "product",
+      "dynamic",
+      "article",
       "divider",
       "spacer",
       "raw-html"
@@ -136,19 +276,46 @@ export const builderBlockDefinitions: BuilderBlockDefinition[] = [
     ]
   },
   {
+    type: "column",
+    label: "Column",
+    description: "Drop zone inside a layout row.",
+    acceptsChildren: true,
+    childTypes: columnContentBlockTypes,
+    defaults: {
+      width: "50%",
+      backgroundColor: "",
+      padding: "0",
+      verticalAlign: "top",
+      columnAttributes: ""
+    },
+    fields: [
+      { key: "width", label: "Sirka", type: "text" },
+      { key: "backgroundColor", label: "Pozadi", type: "color" },
+      { key: "padding", label: "Padding", type: "text" },
+      { key: "verticalAlign", label: "Svisle zarovnani", type: "text" },
+      { key: "columnAttributes", label: "Pokrocile atributy mj-column", type: "code" }
+    ]
+  },
+  {
     type: "wrapper",
     label: "Wrapper",
     description: "Kontejner pro vice sekci se spolecnym pozadim.",
     acceptsChildren: true,
     childTypes: [
       "section",
+      "header",
       "hero",
       "text",
       "button",
       "image",
+      "gif",
+      "video",
       "coupon",
       "two-column",
       "three-column",
+      "four-column",
+      "one-third-two-third",
+      "two-third-one-third",
       "card",
       "quote",
       "navbar",
@@ -156,6 +323,9 @@ export const builderBlockDefinitions: BuilderBlockDefinition[] = [
       "table",
       "accordion",
       "carousel",
+      "product",
+      "dynamic",
+      "article",
       "divider",
       "spacer",
       "raw-mjml",
@@ -332,6 +502,74 @@ export const builderBlockDefinitions: BuilderBlockDefinition[] = [
     ]
   },
   {
+    type: "gif",
+    label: "GIF",
+    description: "Animovany obrazek renderovany pres mj-image.",
+    defaults: {
+      src: "",
+      alt: "",
+      width: "520px",
+      padding: "20px 30px",
+      backgroundColor: "#ffffff",
+      align: "center",
+      link: "",
+      sectionAttributes: "",
+      columnAttributes: "",
+      imageAttributes: ""
+    },
+    fields: [
+      { key: "src", label: "URL GIFu", type: "url" },
+      { key: "alt", label: "Alt text", type: "text" },
+      { key: "link", label: "Odkaz", type: "url" },
+      { key: "width", label: "Sirka", type: "text" },
+      { key: "align", label: "Zarovnani", type: "text" },
+      { key: "padding", label: "Okraje sekce", type: "text" },
+      { key: "backgroundColor", label: "Pozadi", type: "color" },
+      { key: "sectionAttributes", label: "Pokrocile atributy mj-section", type: "code" },
+      { key: "columnAttributes", label: "Pokrocile atributy mj-column", type: "code" },
+      { key: "imageAttributes", label: "Pokrocile atributy mj-image", type: "code" }
+    ]
+  },
+  {
+    type: "video",
+    label: "Video",
+    description: "E-mailovy video placeholder s obrazkem a CTA odkazem.",
+    defaults: {
+      thumbnailUrl: "",
+      title: "Video ukazka",
+      text: "Kliknutim otevrite video v prohlizeci.",
+      href: "https://www.example.com",
+      playLabel: "Prehrat video",
+      backgroundColor: "#ffffff",
+      textColor: "",
+      buttonBackground: "",
+      buttonText: "",
+      width: "520px",
+      padding: "24px 30px",
+      sectionAttributes: "",
+      columnAttributes: "",
+      imageAttributes: "",
+      buttonAttributes: ""
+    },
+    fields: [
+      { key: "thumbnailUrl", label: "Nahled obrazku", type: "url" },
+      { key: "title", label: "Nadpis", type: "text" },
+      { key: "text", label: "Popis", type: "textarea" },
+      { key: "href", label: "URL videa", type: "url" },
+      { key: "playLabel", label: "Text tlacitka", type: "text" },
+      { key: "backgroundColor", label: "Pozadi", type: "color" },
+      { key: "textColor", label: "Barva textu", type: "color" },
+      { key: "buttonBackground", label: "Pozadi tlacitka", type: "color" },
+      { key: "buttonText", label: "Text tlacitka", type: "color" },
+      { key: "width", label: "Sirka nahledu", type: "text" },
+      { key: "padding", label: "Padding", type: "text" },
+      { key: "sectionAttributes", label: "Pokrocile atributy mj-section", type: "code" },
+      { key: "columnAttributes", label: "Pokrocile atributy mj-column", type: "code" },
+      { key: "imageAttributes", label: "Pokrocile atributy mj-image", type: "code" },
+      { key: "buttonAttributes", label: "Pokrocile atributy tlacitka", type: "code" }
+    ]
+  },
+  {
     type: "image-hero",
     label: "Image Hero",
     description: "Text a CTA pres obrazek na pozadi pomoci mj-hero.",
@@ -340,8 +578,13 @@ export const builderBlockDefinitions: BuilderBlockDefinition[] = [
       "text",
       "button",
       "image",
+      "gif",
+      "video",
       "card",
       "quote",
+      "product",
+      "dynamic",
+      "article",
       "divider",
       "spacer",
       "raw-html"
@@ -450,6 +693,8 @@ export const builderBlockDefinitions: BuilderBlockDefinition[] = [
     type: "three-column",
     label: "3 Columns",
     description: "Tri jednoduche sloupce pro benefity, ikony nebo odkazy.",
+    acceptsChildren: true,
+    childTypes: ["column"],
     defaults: {
       title1: "Benefit 1",
       text1: "Kratky popis prvniho benefitu.",
@@ -473,6 +718,99 @@ export const builderBlockDefinitions: BuilderBlockDefinition[] = [
       { key: "padding", label: "Padding", type: "text" },
       { key: "sectionAttributes", label: "Pokrocile atributy mj-section", type: "code" },
       { key: "columnAttributes", label: "Pokrocile atributy sloupcu", type: "code" }
+    ]
+  },
+  {
+    type: "four-column",
+    label: "4 Columns",
+    description: "Ctyri uzke sloupce pro kratke benefity nebo odkazy.",
+    acceptsChildren: true,
+    childTypes: ["column"],
+    defaults: {
+      title1: "Benefit 1",
+      text1: "Kratky text.",
+      title2: "Benefit 2",
+      text2: "Kratky text.",
+      title3: "Benefit 3",
+      text3: "Kratky text.",
+      title4: "Benefit 4",
+      text4: "Kratky text.",
+      backgroundColor: "#ffffff",
+      padding: "24px 30px",
+      sectionAttributes: "",
+      columnAttributes: ""
+    },
+    fields: [
+      { key: "title1", label: "Nadpis 1", type: "text" },
+      { key: "text1", label: "Text 1", type: "textarea" },
+      { key: "title2", label: "Nadpis 2", type: "text" },
+      { key: "text2", label: "Text 2", type: "textarea" },
+      { key: "title3", label: "Nadpis 3", type: "text" },
+      { key: "text3", label: "Text 3", type: "textarea" },
+      { key: "title4", label: "Nadpis 4", type: "text" },
+      { key: "text4", label: "Text 4", type: "textarea" },
+      { key: "backgroundColor", label: "Pozadi", type: "color" },
+      { key: "padding", label: "Padding", type: "text" },
+      { key: "sectionAttributes", label: "Pokrocile atributy mj-section", type: "code" },
+      { key: "columnAttributes", label: "Pokrocile atributy sloupcu", type: "code" }
+    ]
+  },
+  {
+    type: "one-third-two-third",
+    label: "1/3 + 2/3",
+    description: "Uzky levy sloupec a siroky pravy sloupec.",
+    acceptsChildren: true,
+    childTypes: ["column"],
+    defaults: {
+      leftTitle: "Levy blok",
+      leftText: "Kratky text.",
+      rightTitle: "Pravy obsah",
+      rightText: "Delsi obsah pro hlavni sdeleni.",
+      backgroundColor: "#ffffff",
+      padding: "24px 30px",
+      sectionAttributes: "",
+      leftColumnAttributes: "",
+      rightColumnAttributes: ""
+    },
+    fields: [
+      { key: "leftTitle", label: "Levy nadpis", type: "text" },
+      { key: "leftText", label: "Levy text", type: "textarea" },
+      { key: "rightTitle", label: "Pravy nadpis", type: "text" },
+      { key: "rightText", label: "Pravy text", type: "textarea" },
+      { key: "backgroundColor", label: "Pozadi", type: "color" },
+      { key: "padding", label: "Padding", type: "text" },
+      { key: "sectionAttributes", label: "Pokrocile atributy mj-section", type: "code" },
+      { key: "leftColumnAttributes", label: "Pokrocile atributy leveho sloupce", type: "code" },
+      { key: "rightColumnAttributes", label: "Pokrocile atributy praveho sloupce", type: "code" }
+    ]
+  },
+  {
+    type: "two-third-one-third",
+    label: "2/3 + 1/3",
+    description: "Siroky levy sloupec a uzky pravy sloupec.",
+    acceptsChildren: true,
+    childTypes: ["column"],
+    defaults: {
+      leftTitle: "Hlavni obsah",
+      leftText: "Delsi obsah pro hlavni sdeleni.",
+      rightTitle: "Pravy blok",
+      rightText: "Kratky text.",
+      backgroundColor: "#ffffff",
+      padding: "24px 30px",
+      sectionAttributes: "",
+      leftColumnAttributes: "",
+      rightColumnAttributes: ""
+    },
+    fields: [
+      { key: "leftTitle", label: "Levy nadpis", type: "text" },
+      { key: "leftText", label: "Levy text", type: "textarea" },
+      { key: "rightTitle", label: "Pravy nadpis", type: "text" },
+      { key: "rightText", label: "Pravy text", type: "textarea" },
+      { key: "backgroundColor", label: "Pozadi", type: "color" },
+      { key: "padding", label: "Padding", type: "text" },
+      { key: "sectionAttributes", label: "Pokrocile atributy mj-section", type: "code" },
+      { key: "leftColumnAttributes", label: "Pokrocile atributy leveho sloupce", type: "code" },
+      { key: "rightColumnAttributes", label: "Pokrocile atributy praveho sloupce", type: "code" }
     ]
   },
   {
@@ -685,9 +1023,102 @@ export const builderBlockDefinitions: BuilderBlockDefinition[] = [
     ]
   },
   {
+    type: "product",
+    label: "Product",
+    description: "Produktovy blok s obrazkem, cenou a CTA.",
+    defaults: {
+      imageUrl: "",
+      title: "Nazev produktu",
+      description: "Kratky popis produktu nebo nabidky.",
+      price: "499 Kc",
+      ctaLabel: "Zobrazit produkt",
+      ctaHref: "https://www.example.com",
+      backgroundColor: "#ffffff",
+      textColor: "",
+      buttonBackground: "",
+      buttonText: "",
+      padding: "24px 30px",
+      sectionAttributes: "",
+      imageAttributes: "",
+      titleAttributes: "",
+      priceAttributes: "",
+      buttonAttributes: ""
+    },
+    fields: [
+      { key: "imageUrl", label: "Obrazek", type: "url" },
+      { key: "title", label: "Nazev", type: "text" },
+      { key: "description", label: "Popis", type: "textarea" },
+      { key: "price", label: "Cena", type: "text" },
+      { key: "ctaLabel", label: "CTA text", type: "text" },
+      { key: "ctaHref", label: "CTA URL", type: "url" },
+      { key: "backgroundColor", label: "Pozadi", type: "color" },
+      { key: "textColor", label: "Barva textu", type: "color" },
+      { key: "buttonBackground", label: "Pozadi tlacitka", type: "color" },
+      { key: "buttonText", label: "Text tlacitka", type: "color" },
+      { key: "padding", label: "Padding", type: "text" },
+      { key: "sectionAttributes", label: "Pokrocile atributy mj-section", type: "code" },
+      { key: "imageAttributes", label: "Pokrocile atributy obrazku", type: "code" },
+      { key: "titleAttributes", label: "Pokrocile atributy nazvu", type: "code" },
+      { key: "priceAttributes", label: "Pokrocile atributy ceny", type: "code" },
+      { key: "buttonAttributes", label: "Pokrocile atributy tlacitka", type: "code" }
+    ]
+  },
+  {
+    type: "dynamic",
+    label: "Dynamic",
+    description: "Dynamicky nebo personalizovany fragment pro budouci napojeni.",
+    defaults: {
+      label: "Personalizovany blok",
+      source: "{{#if customer.has_offer}}<p>Specialni nabidka pro {{first_name}}</p>{{/if}}"
+    },
+    fields: [
+      { key: "label", label: "Interni nazev", type: "text" },
+      { key: "source", label: "Dynamicky HTML / merge tagy", type: "code" }
+    ]
+  },
+  {
+    type: "article",
+    label: "Article",
+    description: "Novinkovy nebo obsahovy blok s obrazkem a CTA.",
+    defaults: {
+      imageUrl: "",
+      category: "Novinka",
+      title: "Nadpis clanku",
+      summary: "Kratky perex nebo popis obsahu.",
+      ctaLabel: "Cist vice",
+      ctaHref: "https://www.example.com",
+      backgroundColor: "#ffffff",
+      textColor: "",
+      accentColor: "",
+      padding: "24px 30px",
+      sectionAttributes: "",
+      imageAttributes: "",
+      titleAttributes: "",
+      buttonAttributes: ""
+    },
+    fields: [
+      { key: "imageUrl", label: "Obrazek", type: "url" },
+      { key: "category", label: "Kategorie", type: "text" },
+      { key: "title", label: "Nadpis", type: "text" },
+      { key: "summary", label: "Perex", type: "textarea" },
+      { key: "ctaLabel", label: "CTA text", type: "text" },
+      { key: "ctaHref", label: "CTA URL", type: "url" },
+      { key: "backgroundColor", label: "Pozadi", type: "color" },
+      { key: "textColor", label: "Barva textu", type: "color" },
+      { key: "accentColor", label: "Akcent", type: "color" },
+      { key: "padding", label: "Padding", type: "text" },
+      { key: "sectionAttributes", label: "Pokrocile atributy mj-section", type: "code" },
+      { key: "imageAttributes", label: "Pokrocile atributy obrazku", type: "code" },
+      { key: "titleAttributes", label: "Pokrocile atributy nadpisu", type: "code" },
+      { key: "buttonAttributes", label: "Pokrocile atributy tlacitka", type: "code" }
+    ]
+  },
+  {
     type: "two-column",
     label: "2 Columns",
     description: "Dva textove sloupce.",
+    acceptsChildren: true,
+    childTypes: ["column"],
     defaults: {
       leftTitle: "Levy blok",
       leftText: "Text leveho sloupce.",
@@ -788,13 +1219,29 @@ export function createBuilderBlock(
 ): BuilderBlock {
   const definition = getBlockDefinition(type);
   const mobileDefaults = getDefaultMobileBlockProps(type);
+  const children = createDefaultBuilderChildren(type);
+
   return {
     id,
     type,
     props: { ...definition.defaults },
     mobileProps: Object.keys(mobileDefaults).length ? mobileDefaults : undefined,
-    children: definition.acceptsChildren ? [] : undefined
+    children: children ?? (definition.acceptsChildren ? [] : undefined)
   };
+}
+
+function createDefaultBuilderChildren(type: BuilderBlockType): BuilderBlock[] | undefined {
+  if (!isColumnLayoutType(type)) {
+    return undefined;
+  }
+
+  return getLayoutColumnWidths(type).map((width, index) => ({
+    ...createBuilderBlock("column", `${type}-column-${index + 1}-${Date.now()}-${Math.random().toString(16).slice(2)}`),
+    props: {
+      ...getBlockDefinition("column").defaults,
+      width
+    }
+  }));
 }
 
 function getDefaultMobileBlockProps(type: BuilderBlockType): Record<string, string> {
@@ -815,6 +1262,29 @@ export function getBlockDefinition(type: BuilderBlockType): BuilderBlockDefiniti
   return definition;
 }
 
+export function isBuilderBlockType(value: unknown): value is BuilderBlockType {
+  return (
+    typeof value === "string" &&
+    builderBlockDefinitions.some((definition) => definition.type === value)
+  );
+}
+
+export function canBuilderBlockAcceptChild(
+  parentType: BuilderBlockType | null | undefined,
+  childType: BuilderBlockType
+): boolean {
+  if (!parentType) {
+    return childType !== "column";
+  }
+
+  const definition = getBlockDefinition(parentType);
+  if (!definition.acceptsChildren) {
+    return false;
+  }
+
+  return !definition.childTypes?.length || definition.childTypes.includes(childType);
+}
+
 export function getBuilderBlockProps(
   block: BuilderBlock,
   device: BuilderRenderDevice = "desktop"
@@ -828,6 +1298,65 @@ export function getBuilderBlockProps(
   }
 
   return block.props;
+}
+
+function stringRecord(value: unknown): Record<string, string> {
+  if (!value || typeof value !== "object" || Array.isArray(value)) {
+    return {};
+  }
+
+  return Object.entries(value).reduce<Record<string, string>>((acc, [key, item]) => {
+    if (typeof key === "string" && item !== undefined && item !== null) {
+      acc[key] = String(item);
+    }
+    return acc;
+  }, {});
+}
+
+export function normalizeBuilderBlocks(
+  blocks: unknown,
+  parentType: BuilderBlockType | null = null
+): BuilderBlock[] {
+  if (!Array.isArray(blocks)) {
+    return [];
+  }
+
+  return blocks.flatMap((item) => {
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      return [];
+    }
+
+    const candidate = item as Partial<BuilderBlock>;
+    if (
+      !isBuilderBlockType(candidate.type) ||
+      !canBuilderBlockAcceptChild(parentType, candidate.type)
+    ) {
+      return [];
+    }
+
+    const block = createBuilderBlock(
+      candidate.type,
+      typeof candidate.id === "string" && candidate.id.trim()
+        ? candidate.id
+        : undefined
+    );
+    const definition = getBlockDefinition(candidate.type);
+    const mobileProps = stringRecord(candidate.mobileProps);
+
+    return [
+      {
+        ...block,
+        props: {
+          ...definition.defaults,
+          ...stringRecord(candidate.props)
+        },
+        mobileProps: Object.keys(mobileProps).length ? mobileProps : undefined,
+        children: definition.acceptsChildren
+          ? normalizeBuilderBlocks(candidate.children, candidate.type)
+          : undefined
+      }
+    ];
+  });
 }
 
 function escapeXml(value: string): string {
@@ -907,6 +1436,89 @@ function renderChildren(
     .join("\n");
 }
 
+function columnTextContent(
+  title: string | undefined,
+  body: string | undefined,
+  theme: BuilderTheme
+) {
+  return `
+          <mj-text font-size="${attr(theme.h3FontSize || "18px")}" font-weight="${attr(
+            theme.h3FontWeight || "700"
+          )}" line-height="${attr(theme.h3LineHeight || "26px")}" color="${attr(
+            theme.textColor
+          )}" padding="0 0 8px 0">${richText(title)}</mj-text>
+          <mj-text font-size="${attr(theme.bodyFontSize || theme.defaultTextSize)}" line-height="${attr(
+            theme.bodyLineHeight || theme.defaultLineHeight
+          )}" color="${attr(theme.textColor)}" padding="0">${richText(body)}</mj-text>
+        `;
+}
+
+function renderTextColumns(
+  columns: Array<{
+    title?: string;
+    text?: string;
+    width: string;
+    padding?: string;
+    attributes?: string;
+  }>,
+  blockProps: Record<string, string>,
+  theme: BuilderTheme
+) {
+  return section(
+    columns
+      .map((item) =>
+        column(columnTextContent(item.title, item.text, theme), {
+          width: item.width,
+          padding: item.padding || "0 8px",
+          attributes: item.attributes || blockProps.columnAttributes
+        })
+      )
+      .join("\n"),
+    {
+      backgroundColor: colorValue(blockProps.backgroundColor, theme.sectionBackground),
+      padding: blockProps.padding || theme.defaultSectionPadding || "24px 30px",
+      attributes: blockProps.sectionAttributes
+    }
+  );
+}
+
+function renderColumnLayout(
+  block: BuilderBlock,
+  blockProps: Record<string, string>,
+  theme: BuilderTheme,
+  device: BuilderRenderDevice
+): string | null {
+  const columns = (block.children || []).filter((child) => child.type === "column");
+  if (!columns.length) {
+    return null;
+  }
+
+  const widths = getLayoutColumnWidths(block.type);
+  const content = columns
+    .map((item, index) => {
+      const p = getBuilderBlockProps(item, device);
+      const children = renderChildren(item, theme, device);
+      const fallback = `<mj-text align="center" color="${attr(
+        theme.mutedColor
+      )}" padding="0">Empty column</mj-text>`;
+
+      return column(children || fallback, {
+        width: p.width || widths[index] || widths[0],
+        padding: p.padding || "0 8px",
+        attributes: `${p.verticalAlign ? `vertical-align="${attr(p.verticalAlign)}"` : ""} ${
+          p.columnAttributes || ""
+        }`
+      });
+    })
+    .join("\n");
+
+  return section(content, {
+    backgroundColor: colorValue(blockProps.backgroundColor, theme.sectionBackground),
+    padding: blockProps.padding || theme.defaultSectionPadding || "24px 30px",
+    attributes: blockProps.sectionAttributes
+  });
+}
+
 function renderBlock(
   block: BuilderBlock,
   theme: BuilderTheme,
@@ -916,6 +1528,9 @@ function renderBlock(
   const p = getBuilderBlockProps(block, device);
 
   switch (block.type) {
+    case "column":
+      return renderChildren(block, theme, device);
+
     case "section": {
       const content = renderChildren(block, theme, device);
       return section(
@@ -1121,6 +1736,79 @@ function renderBlock(
         }
       );
 
+    case "gif":
+      if (!p.src) {
+        return "";
+      }
+      {
+        const gifImage = `<mj-image align="${attr(p.align, "center")}" src="${attr(
+          p.src
+        )}" alt="${attr(p.alt)}" width="${attr(
+          p.width,
+          "520px"
+        )}"${optionalAttr("href", p.link)} padding="${
+          context === "child" ? attr(p.padding, "0 0 12px 0") : "0"
+        }"${rawAttributes(p.imageAttributes)}></mj-image>`;
+
+        if (context === "child") {
+          return gifImage;
+        }
+
+        return section(column(gifImage, { attributes: p.columnAttributes }), {
+          backgroundColor: colorValue(p.backgroundColor, theme.sectionBackground),
+          padding: p.padding || "20px 30px",
+          attributes: p.sectionAttributes
+        });
+      }
+
+    case "video": {
+      const media = p.thumbnailUrl
+        ? `<mj-image src="${attr(p.thumbnailUrl)}" href="${attr(
+            p.href
+          )}" alt="${attr(p.title)}" width="${attr(
+            p.width,
+            "520px"
+          )}" padding="0 0 16px 0"${rawAttributes(p.imageAttributes)}></mj-image>`
+        : `<mj-text align="center" container-background-color="#111827" color="#ffffff" font-size="16px" font-weight="700" padding="36px 20px">Video placeholder</mj-text>`;
+      const content = `
+        ${media}
+        <mj-text align="center" font-size="${attr(
+          theme.h3FontSize,
+          "18px"
+        )}" font-weight="${attr(theme.h3FontWeight, "700")}" line-height="${attr(
+          theme.h3LineHeight,
+          "26px"
+        )}" color="${attr(p.textColor || theme.textColor)}" padding="0 0 8px 0">${richText(
+          p.title
+        )}</mj-text>
+        <mj-text align="center" font-size="${attr(
+          theme.bodyFontSize,
+          theme.defaultTextSize
+        )}" line-height="${attr(
+          theme.bodyLineHeight,
+          theme.defaultLineHeight
+        )}" color="${attr(p.textColor || theme.textColor)}" padding="0 0 14px 0">${richText(
+          p.text
+        )}</mj-text>
+        <mj-button align="center" href="${attr(p.href)}" background-color="${attr(
+          p.buttonBackground || theme.buttonBackground
+        )}" color="${attr(p.buttonText || theme.buttonText)}" font-weight="${attr(
+          theme.buttonFontWeight || "700"
+        )}" inner-padding="12px 22px"${rawAttributes(p.buttonAttributes)}>${richText(
+          p.playLabel
+        )}</mj-button>`;
+
+      if (context === "child") {
+        return content;
+      }
+
+      return section(column(content, { attributes: p.columnAttributes }), {
+        backgroundColor: colorValue(p.backgroundColor, theme.sectionBackground),
+        padding: p.padding || "24px 30px",
+        attributes: p.sectionAttributes
+      });
+    }
+
     case "image-hero":
       {
         const childContent = renderChildren(block, theme, device);
@@ -1217,48 +1905,107 @@ function renderBlock(
         }
       );
 
-    case "three-column": {
-      const cells = [1, 2, 3]
-        .map(
-          (index) => `
-            <td width="33.33%" style="padding: 0 8px; vertical-align: top;">
-              <strong>${text(p[`title${index}`])}</strong><br />
-              <span>${richText(p[`text${index}`])}</span>
-            </td>`
-        )
-        .join("");
-
+    case "three-column":
+      {
+        const layout = renderColumnLayout(block, p, theme, device);
+        if (layout) {
+          return layout;
+        }
+      }
       if (context === "child") {
-        return `<mj-table color="${attr(
-          theme.textColor
-        )}" font-size="14px" line-height="21px" padding="0 0 12px 0">
-          <tr>${cells}</tr>
+        return `<mj-table color="${attr(theme.textColor)}" font-size="14px" line-height="21px" padding="0 0 12px 0">
+          <tr>${[1, 2, 3]
+            .map(
+              (index) => `<td width="33.33%" style="padding: 0 8px; vertical-align: top;"><strong>${text(
+                p[`title${index}`]
+              )}</strong><br /><span>${richText(p[`text${index}`])}</span></td>`
+            )
+            .join("")}</tr>
         </mj-table>`;
       }
-
-      return section(
-        [1, 2, 3]
-          .map((index) =>
-            column(
-              `
-          <mj-text font-size="16px" font-weight="700" color="${attr(
-            theme.textColor
-          )}" padding="0 0 8px 0">${richText(p[`title${index}`])}</mj-text>
-          <mj-text font-size="14px" line-height="21px" color="${attr(
-            theme.textColor
-          )}" padding="0">${richText(p[`text${index}`])}</mj-text>
-        `,
-              { width: "33.33%", padding: "0 8px", attributes: p.columnAttributes }
-            )
-          )
-          .join("\n"),
-        {
-          backgroundColor: colorValue(p.backgroundColor, theme.sectionBackground),
-          padding: p.padding || theme.defaultSectionPadding || "24px 30px",
-          attributes: p.sectionAttributes
-        }
+      return renderTextColumns(
+        [1, 2, 3].map((index) => ({
+          title: p[`title${index}`],
+          text: p[`text${index}`],
+          width: "33.33%"
+        })),
+        p,
+        theme
       );
-    }
+
+    case "four-column":
+      {
+        const layout = renderColumnLayout(block, p, theme, device);
+        if (layout) {
+          return layout;
+        }
+      }
+      return renderTextColumns(
+        [1, 2, 3, 4].map((index) => ({
+          title: p[`title${index}`],
+          text: p[`text${index}`],
+          width: "25%",
+          padding: "0 6px"
+        })),
+        p,
+        theme
+      );
+
+    case "one-third-two-third":
+      {
+        const layout = renderColumnLayout(block, p, theme, device);
+        if (layout) {
+          return layout;
+        }
+      }
+      return renderTextColumns(
+        [
+          {
+            title: p.leftTitle,
+            text: p.leftText,
+            width: "33.33%",
+            padding: "0 10px 0 0",
+            attributes: p.leftColumnAttributes
+          },
+          {
+            title: p.rightTitle,
+            text: p.rightText,
+            width: "66.67%",
+            padding: "0 0 0 10px",
+            attributes: p.rightColumnAttributes
+          }
+        ],
+        p,
+        theme
+      );
+
+    case "two-third-one-third":
+      {
+        const layout = renderColumnLayout(block, p, theme, device);
+        if (layout) {
+          return layout;
+        }
+      }
+      return renderTextColumns(
+        [
+          {
+            title: p.leftTitle,
+            text: p.leftText,
+            width: "66.67%",
+            padding: "0 10px 0 0",
+            attributes: p.leftColumnAttributes
+          },
+          {
+            title: p.rightTitle,
+            text: p.rightText,
+            width: "33.33%",
+            padding: "0 0 0 10px",
+            attributes: p.rightColumnAttributes
+          }
+        ],
+        p,
+        theme
+      );
 
     case "card": {
       const cardContent = `
@@ -1510,7 +2257,133 @@ function renderBlock(
       });
     }
 
+    case "product": {
+      const product = `
+        ${
+          p.imageUrl
+            ? `<mj-image src="${attr(
+                p.imageUrl
+              )}" alt="${attr(p.title)}" width="240px" padding="0 0 14px 0"${rawAttributes(
+                p.imageAttributes
+              )}></mj-image>`
+            : ""
+        }
+        <mj-text align="center" font-size="${attr(
+          theme.h3FontSize,
+          "18px"
+        )}" font-weight="${attr(theme.h3FontWeight, "700")}" line-height="${attr(
+          theme.h3LineHeight,
+          "26px"
+        )}" color="${attr(p.textColor || theme.textColor)}" padding="0 0 8px 0"${rawAttributes(
+          p.titleAttributes
+        )}>${richText(p.title)}</mj-text>
+        <mj-text align="center" font-size="${attr(
+          theme.bodyFontSize,
+          theme.defaultTextSize
+        )}" line-height="${attr(
+          theme.bodyLineHeight,
+          theme.defaultLineHeight
+        )}" color="${attr(p.textColor || theme.textColor)}" padding="0 0 10px 0">${richText(
+          p.description
+        )}</mj-text>
+        <mj-text align="center" font-size="18px" font-weight="700" color="${attr(
+          theme.primaryColor
+        )}" padding="0 0 14px 0"${rawAttributes(p.priceAttributes)}>${richText(
+          p.price
+        )}</mj-text>
+        <mj-button align="center" href="${attr(p.ctaHref)}" background-color="${attr(
+          p.buttonBackground || theme.buttonBackground
+        )}" color="${attr(p.buttonText || theme.buttonText)}" font-weight="${attr(
+          theme.buttonFontWeight || "700"
+        )}" inner-padding="12px 22px"${rawAttributes(p.buttonAttributes)}>${richText(
+          p.ctaLabel
+        )}</mj-button>`;
+
+      if (context === "child") {
+        return product;
+      }
+
+      return section(column(product), {
+        backgroundColor: colorValue(p.backgroundColor, theme.sectionBackground),
+        padding: p.padding || "24px 30px",
+        attributes: p.sectionAttributes
+      });
+    }
+
+    case "dynamic":
+      return p.source?.trim()
+        ? `<mj-raw>${p.source.trim()}</mj-raw>`
+        : `<mj-raw><!-- Dynamic block: ${text(p.label)} --></mj-raw>`;
+
+    case "article": {
+      const article = `
+        ${
+          p.imageUrl
+            ? `<mj-image src="${attr(
+                p.imageUrl
+              )}" alt="${attr(p.title)}" width="520px" padding="0 0 16px 0"${rawAttributes(
+                p.imageAttributes
+              )}></mj-image>`
+            : ""
+        }
+        ${
+          p.category
+            ? `<mj-text font-size="11px" font-weight="700" color="${attr(
+                p.accentColor || theme.primaryColor
+              )}" padding="0 0 6px 0">${richText(p.category)}</mj-text>`
+            : ""
+        }
+        <mj-text font-size="${attr(theme.h2FontSize, "24px")}" font-weight="${attr(
+          theme.h2FontWeight,
+          "700"
+        )}" line-height="${attr(theme.h2LineHeight, "32px")}" color="${attr(
+          p.textColor || theme.textColor
+        )}" padding="0 0 10px 0"${rawAttributes(p.titleAttributes)}>${richText(
+          p.title
+        )}</mj-text>
+        <mj-text font-size="${attr(
+          theme.bodyFontSize,
+          theme.defaultTextSize
+        )}" line-height="${attr(
+          theme.bodyLineHeight,
+          theme.defaultLineHeight
+        )}" color="${attr(p.textColor || theme.textColor)}" padding="0 0 14px 0">${richText(
+          p.summary
+        )}</mj-text>
+        ${
+          p.ctaLabel
+            ? `<mj-button align="left" href="${attr(
+                p.ctaHref
+              )}" background-color="${attr(
+                theme.buttonBackground
+              )}" color="${attr(
+                theme.buttonText
+              )}" font-weight="${attr(
+                theme.buttonFontWeight || "700"
+              )}" inner-padding="10px 20px" padding="0"${rawAttributes(
+                p.buttonAttributes
+              )}>${richText(p.ctaLabel)}</mj-button>`
+            : ""
+        }`;
+
+      if (context === "child") {
+        return article;
+      }
+
+      return section(column(article), {
+        backgroundColor: colorValue(p.backgroundColor, theme.sectionBackground),
+        padding: p.padding || "24px 30px",
+        attributes: p.sectionAttributes
+      });
+    }
+
     case "two-column":
+      {
+        const layout = renderColumnLayout(block, p, theme, device);
+        if (layout) {
+          return layout;
+        }
+      }
       return section(
         `${column(
           `
@@ -1613,15 +2486,36 @@ export function buildBuilderMjml(
       <mj-section background-color="${attr(
         theme.sectionBackground
       )}" padding="${attr(theme.defaultSectionPadding)}" />
-      <mj-text font-size="${attr(theme.defaultTextSize)}" line-height="${attr(
-        theme.defaultLineHeight
+      <mj-text font-size="${attr(
+        theme.bodyFontSize || theme.defaultTextSize
+      )}" line-height="${attr(
+        theme.bodyLineHeight || theme.defaultLineHeight
       )}" font-weight="${attr(theme.defaultFontWeight || "400")}" color="${attr(
         theme.textColor
       )}" />
       <mj-button background-color="${attr(theme.buttonBackground)}" color="${attr(
         theme.buttonText
+      )}" font-size="${attr(theme.buttonFontSize || "14px")}" font-weight="${attr(
+        theme.buttonFontWeight || "700"
       )}" />
     </mj-attributes>
+    <mj-style inline="inline">
+      a { color: ${attr(theme.linkColor || theme.primaryColor)}; }
+      h1 { font-size: ${attr(theme.h1FontSize)}; line-height: ${attr(
+        theme.h1LineHeight
+      )}; font-weight: ${attr(theme.h1FontWeight)}; }
+      h2 { font-size: ${attr(theme.h2FontSize)}; line-height: ${attr(
+        theme.h2LineHeight
+      )}; font-weight: ${attr(theme.h2FontWeight)}; }
+      h3 { font-size: ${attr(theme.h3FontSize)}; line-height: ${attr(
+        theme.h3LineHeight
+      )}; font-weight: ${attr(theme.h3FontWeight)}; }
+      ul, ol { margin-top: ${attr(theme.listSpacing)}; margin-bottom: ${attr(
+        theme.listSpacing
+      )}; }
+      li { margin-bottom: ${attr(theme.listItemSpacing)}; }
+      a:hover { color: ${attr(theme.buttonHoverBackground || theme.linkColor)}; }
+    </mj-style>
     ${options.customHead?.trim() || ""}
   </mj-head>
   <mj-body background-color="${attr(theme.bodyBackground)}" width="${attr(theme.width)}">
@@ -1629,3 +2523,4 @@ ${renderedBlocks}
   </mj-body>
 </mjml>`;
 }
+

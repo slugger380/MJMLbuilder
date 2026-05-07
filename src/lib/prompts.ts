@@ -58,18 +58,18 @@ ${getEmailComponentReference()}`;
 }
 
 export function buildUserPrompt(input: {
-  emailType: string;
-  topic: string;
-  mainMessage: string;
-  ctaText: string;
-  ctaUrl: string;
+  emailType?: string;
+  topic?: string;
+  mainMessage?: string;
+  ctaText?: string;
+  ctaUrl?: string;
   notes?: string;
 }): string {
   return `Vytvor obecnou MJML sablonu e-mailu podle zadani.
 
-Typ e-mailu: ${input.emailType}
-Tema: ${input.topic}
-Hlavni sdeleni: ${input.mainMessage}
+Typ e-mailu: ${input.emailType || "promo"}
+Tema: ${input.topic || ""}
+Hlavni sdeleni: ${input.mainMessage || ""}
 CTA text: ${input.ctaText || "Neni zadano"}
 CTA URL: ${input.ctaUrl || "Neni zadano"}
 Poznamky: ${input.notes || "Zadne"}

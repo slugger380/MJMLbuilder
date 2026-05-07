@@ -1,6 +1,7 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import {
+  DEFAULT_COUPON_WORKBOOK_LIMIT,
   readCouponWorkbookFromUpload,
   type CouponRow,
   type CouponWorkbookInput,
@@ -16,6 +17,99 @@ const couponTemplatePath = path.join(
   "templates",
   "sablona_1blok.mjml"
 );
+
+const selfServiceAdSection = `
+    <!-- Inzerce samoobsluhy -->
+    <mj-section padding="10px 15px">
+      <mj-column background-color="#ffffff" border-radius="16px" padding="30px">
+        <mj-text
+          css-class="h1"
+          font-size="26px"
+          color="#1a90e9"
+          font-weight="700"
+          line-height="1.2"
+          padding="0 0 22px 0"
+        >
+          U&#382; jste nav&#353;t&#237;vili na&#353;i samoobsluhu na str&#225;nk&#225;ch?
+        </mj-text>
+        <mj-text
+          font-size="18px"
+          font-weight="800"
+          color="#333333"
+          padding="0 0 14px 0"
+        >
+          Co v Samoobsluze zvl&#225;dnete:
+        </mj-text>
+        <mj-table
+          cellpadding="0"
+          cellspacing="0"
+          color="#111827"
+          font-size="14px"
+          line-height="1.6"
+          padding="0"
+        >
+          <tr>
+            <td style="vertical-align: top; width: 44px; padding: 10px 0;">
+              <span style="display: inline-block; width: 34px; height: 34px; border-radius: 10px; background: #d70339; color: #ffffff; font-size: 18px; line-height: 34px; text-align: center;">&#10003;</span>
+            </td>
+            <td style="vertical-align: top; padding: 8px 0 10px 10px;">
+              <div style="font-weight: 800; color: #111827;">Okam&#382;it&#253; p&#345;ehled faktur a plateb</div>
+              <div style="color: #6b7280;">Zapla&#357;te nebo si st&#225;hn&#283;te fakturu online b&#283;hem chv&#237;le.</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="vertical-align: top; width: 44px; padding: 10px 0;">
+              <span style="display: inline-block; width: 34px; height: 34px; border-radius: 10px; background: #d70339; color: #ffffff; font-size: 18px; line-height: 34px; text-align: center;">&#9881;</span>
+            </td>
+            <td style="vertical-align: top; padding: 8px 0 10px 10px;">
+              <div style="font-weight: 800; color: #111827;">Nastaven&#237; slu&#382;eb</div>
+              <div style="color: #6b7280;">Zm&#283;&#328;te tarif nebo dopl&#328;kov&#233; slu&#382;by bez &#269;ek&#225;n&#237; na podporu.</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="vertical-align: top; width: 44px; padding: 10px 0;">
+              <span style="display: inline-block; width: 34px; height: 34px; border-radius: 10px; background: #d70339; color: #ffffff; font-size: 18px; line-height: 34px; text-align: center;">?</span>
+            </td>
+            <td style="vertical-align: top; padding: 8px 0 10px 10px;">
+              <div style="font-weight: 800; color: #111827;">Rychl&#225; podpora 24/7</div>
+              <div style="color: #6b7280;">Odpov&#283;di na nej&#269;ast&#283;j&#353;&#237; dotazy najdete p&#345;&#237;mo v samoobsluze.</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="vertical-align: top; width: 44px; padding: 10px 0;">
+              <span style="display: inline-block; width: 34px; height: 34px; border-radius: 10px; background: #d70339; color: #ffffff; font-size: 18px; line-height: 34px; text-align: center;">!</span>
+            </td>
+            <td style="vertical-align: top; padding: 8px 0 10px 10px;">
+              <div style="font-weight: 800; color: #111827;">Diagnostika s&#237;t&#283;</div>
+              <div style="color: #6b7280;">Pokud m&#225;te n&#225;&#353; wifi router, nab&#237;z&#237;me mo&#382;nosti diagnostiky s&#237;t&#283;.</div>
+            </td>
+          </tr>
+          <tr>
+            <td style="vertical-align: top; width: 44px; padding: 10px 0;">
+              <span style="display: inline-block; width: 34px; height: 34px; border-radius: 10px; background: #d70339; color: #ffffff; font-size: 18px; line-height: 34px; text-align: center;">i</span>
+            </td>
+            <td style="vertical-align: top; padding: 8px 0 10px 10px;">
+              <div style="font-weight: 800; color: #111827;">Informace o slu&#382;b&#225;ch</div>
+              <div style="color: #6b7280;">P&#345;ehledn&#283; na jednom m&#237;st&#283; ve&#353;ker&#233; informace o va&#353;ich slu&#382;b&#225;ch.</div>
+            </td>
+          </tr>
+        </mj-table>
+        <mj-button
+          align="center"
+          background-color="#eeeeee"
+          border-radius="8px"
+          color="#1a90e9"
+          font-size="16px"
+          font-weight="600"
+          href="[!customer_portal_url!]"
+          inner-padding="20px 30px"
+          padding="20px 0 10px 0"
+        >
+          VSTOUPIT
+        </mj-button>
+      </mj-column>
+    </mj-section>
+`;
 
 export type CouponTemplateInput = {
   buffer: Buffer;
@@ -571,10 +665,7 @@ function buildTokenizedTemplate(
   templateSourceType: "mjml";
   issues: ValidationIssue[];
 } {
-  const issues: ValidationIssue[] = workbook.tableWarnings.map((message) => ({
-    type: "warning",
-    message
-  }));
+  const issues: ValidationIssue[] = [...workbook.tableIssues];
   const { prefix, block, footer } = extractSingleBlockTemplate(template);
   const month = normalizeCzechMonth(input.couponMonth);
 
@@ -597,12 +688,13 @@ function buildTokenizedTemplate(
   const headerRow = workbook.rows[0] || { rowNumber: 0, values: {} };
   const filledPrefix = replaceColumnTokens(prefix, headerRow, month, missingTokens);
   const filledFooter = replaceColumnTokens(footer, headerRow, month, missingTokens);
+  const selfServiceAd = input.includeSelfServiceAd ? selfServiceAdSection : "";
   const blocks = workbook.rows
     .map((row) =>
       removeEmptyImages(replaceColumnTokens(block, row, month, missingTokens))
     )
     .join("\n");
-  const mjml = `${filledPrefix}${blocks}${filledFooter}`;
+  const mjml = `${filledPrefix}${selfServiceAd}${blocks}${filledFooter}`;
 
   for (const token of missingTokens) {
     if (tokenKey(token) !== "mesic") {
@@ -627,10 +719,11 @@ function buildTokenizedTemplate(
         `List: ${workbook.sheetName}`,
         `Mesic: ${month}`,
         `Pouzito radku/bloku: ${workbook.rows.length}`,
+        input.includeSelfServiceAd ? "Pred kupony vlozena inzerce samoobsluhy." : "",
         "Kazdy datovy radek Excelu vytvoril jednu kopii ukazkoveho bloku.",
         "Tokeny ve tvaru [?NAZEV SLOUPCE?] se doplnily podle hlavicek Excelu.",
         "Pokud je prazdny token pro logo, mj-image se z bloku odstrani."
-      ]
+      ].filter(Boolean)
     },
     templateSourceType: "mjml",
     issues
@@ -665,7 +758,7 @@ function buildCouponTemplateError(
     },
     html: "",
     templateSourceType: "mjml",
-    issues: [{ type: "error", message }]
+    issues: [...workbook.issues, { type: "error", message }]
   };
 }
 
@@ -801,7 +894,7 @@ export async function buildCouponsTemplate(
   templateSourceType: "mjml" | "html";
   issues: ValidationIssue[];
 }> {
-  const workbook = readCouponWorkbookFromUpload(workbookInput, 24);
+  const workbook = readCouponWorkbookFromUpload(workbookInput, DEFAULT_COUPON_WORKBOOK_LIMIT);
   const template = templateInput
     ? templateInput.buffer.toString("utf8")
     : readFileSync(couponTemplatePath, "utf8");
@@ -832,10 +925,7 @@ export async function buildCouponsTemplate(
   }
 
   const { prefix, sections, footer } = extractCouponSections(template);
-  const issues: ValidationIssue[] = workbook.warnings.map((message) => ({
-    type: "warning",
-    message
-  }));
+  const issues: ValidationIssue[] = [...workbook.issues];
 
   if (sections.length === 0) {
     issues.push({
@@ -911,7 +1001,8 @@ export async function buildCouponsTemplate(
         pair.coupon.logoUrl || (!pair.isNewBlock ? imageSrc(pair.section) : undefined)
     }
   }));
-  const mjml = `${prefix}${pairsWithResolvedLogos
+  const selfServiceAd = input.includeSelfServiceAd ? selfServiceAdSection : "";
+  const mjml = `${prefix}${selfServiceAd}${pairsWithResolvedLogos
     .sort((a, b) => a.couponIndex - b.couponIndex)
     .map(({ section, coupon, isNewBlock }) =>
       updateCouponSection(section, coupon, { removeLogoWhenMissing: isNewBlock })
@@ -935,13 +1026,14 @@ export async function buildCouponsTemplate(
         `Zdroj Excelu: ${workbook.fileName}`,
         `List: ${workbook.sheetName}`,
         `Pouzito kuponu: ${pairs.length}`,
+        input.includeSelfServiceAd ? "Pred kupony vlozena inzerce samoobsluhy." : "",
         "Kupony byly parovany se sablonou podle nazvu inzerenta, alt textu loga, komentare bloku nebo puvodniho kodu.",
         "Nove kupony bez odpovidajiciho bloku se vytvari z prvni kuponove karty v sablone.",
         `Nalezeno logo URL: ${workbook.logoCount}`,
         `Prevzato logo ze sablony: ${templateLogoCount}`,
         ...aiNotes,
         ...changeNotes
-      ]
+      ].filter(Boolean)
     },
     templateSourceType: "mjml",
     issues

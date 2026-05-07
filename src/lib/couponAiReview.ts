@@ -1,6 +1,6 @@
 import OpenAI from "openai";
 import type { WorkbookDataRow } from "@/lib/couponWorkbook";
-import type { ValidationIssue } from "@/lib/types";
+import type { ValidationIssue, AiSuggestionChange } from "@/lib/types";
 
 type CouponReviewInput = {
   apiKey: string;
@@ -98,7 +98,9 @@ function compactRows(rows: WorkbookDataRow[]) {
   return rows.map((row, index) => ({
     index: index + 1,
     rowNumber: row.rowNumber,
-    values: row.values
+    values: Object.fromEntries(
+      Object.entries(row.values).filter(([, value]) => value.trim())
+    )
   }));
 }
 
@@ -108,6 +110,44 @@ function trimForModel(value: string, limit: number): string {
   }
 
   return `${value.slice(0, limit)}\n\n[ZKRACENO: ${value.length - limit} znaku]`;
+}
+
+function isForbiddenTokenSuggestion(issue: AiReviewIssue) {
+  const text = [
+    issue.field,
+    issue.message,
+    issue.expected,
+    issue.actual,
+    issue.suggestion
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return (
+    text.includes("[!month!]") ||
+    text.includes("{{month}}") ||
+    (text.includes("mesic") &&
+      /(placeholder|token|atribut|\[!|\[\?|\{\{)/i.test(text))
+  );
+}
+
+function isExcelQualityIssue(issue: AiReviewIssue) {
+  const text = [
+    issue.field,
+    issue.message,
+    issue.expected,
+    issue.actual,
+    issue.suggestion
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return (
+    /(excel|tabulce|tabulka|sloupec|bunka|buňka)/i.test(text) &&
+    /(chybi|chybí|missing|prazdn|prázdn|neni vyplnen|není vyplněn|neni uveden|není uveden)/i.test(text)
+  );
 }
 
 export async function reviewCouponsWithAi(
@@ -123,7 +163,7 @@ export async function reviewCouponsWithAi(
       {
         role: "system",
         content:
-          "Jsi peclivy QA kontrolor kuponovych e-mailovych sablon. Nikdy neupravuj MJML. Porovnej radky Excelu s vyslednym MJML a vrat pouze JSON podle schema. Kontroluj, ze kazdy radek ma jeden blok, ze texty, kuponove kody, affiliate odkazy, zamerne zobrazene platnosti a loga odpovidaji tabulce. Sloupec Platnost do muze byt v Excelu internim udajem a v e-mailove sablone se zamerne nezobrazuje; jeho absenci nikdy nehlas jako problem. Pokud je logo v tabulce prazdne, ve vysledku nema byt v danem bloku zadne logo. Nesoulad hodnot oznac jako error. Jazykove, typograficke nebo obchodni doporuceni oznac jen jako warning. U textu hledej preklepy, divne formulace, duplicity a zjevne nelogicke hodnoty. Nehlas drobnosti, ktere nejsou problem."
+          "Jsi QA kontrolor vysledne MJML sablony, ne auditor Excelu. Excel pouzij jen jako zdroj pravdy pro porovnani, zda se neprázdné hodnoty z radku spravne propsaly do vysledneho MJML. Nikdy nehlas chybejici, prazdne nebo nevyplnene hodnoty v Excelu, chybejici sloupce ani kvalitu vstupni tabulky. Pokud je bunka nebo sloupec v Excelu prazdny, je to v poradku a nic k tomu nehlas. Kontroluj pouze: 1) kazdy pouzitelny radek Excelu ma odpovidajici blok ve vyslednem MJML, 2) neprázdné hodnoty z Excelu, ktere se maji zobrazit v sablone, jsou v MJML spravne, 3) kuponove kody a affiliate odkazy odpovidaji, 4) viditelne texty sablony maji pravopisne, jazykove nebo typograficke chyby. Sloupec Platnost do muze byt internim udajem a v e-mailove sablone se zamerne nezobrazuje; jeho absenci nikdy nehlas. Pokud je logo nebo podminka v Excelu prazdna, nikdy to nehlas jako problem. Nehlas drobnosti, ktere nejsou problem. Nenavrhuj zmeny internich tokenu, placeholderu ani systemovych atributu, napr. [!month!], {{month}} nebo tokenu [?MESIC?]; mesic v headeru ridi aplikace pres pole Mesic do headeru a je spravne, ze je ve vyslednem MJML jako konkretni text. Kazdy skutecny problem, ktery lze opravit, musi mit konkretni actionable suggestion. Do actual dej presny nalezeny text nebo hodnotu z MJML, do expected dej presnou spravnou hodnotu a do suggestion kratky pokyn typu Nahradit X za Y nebo Zmenit atribut line-height z 1.15 na 16px. Vrat pouze JSON podle schema."
       },
       {
         role: "user",
@@ -162,19 +202,32 @@ export async function reviewCouponsWithAi(
   }
 
   return {
-    issues: parsed.issues.map((issue) => ({
-      type: issue.severity,
-      message: `AI kontrola${issue.rowNumber ? `, radek ${issue.rowNumber}` : ""}${
-        issue.field ? `, ${issue.field}` : ""
-      }: ${issue.message}`,
-      details: [
-        issue.expected ? `Ocekavano: ${issue.expected}` : "",
-        issue.actual ? `Nalezeno: ${issue.actual}` : "",
-        issue.suggestion ? `Navrh: ${issue.suggestion}` : ""
-      ]
-        .filter(Boolean)
-        .join("\n")
-    })),
+    issues: parsed.issues.filter((issue) => !isForbiddenTokenSuggestion(issue) && !isExcelQualityIssue(issue)).map((issue) => {
+      const change: Partial<AiSuggestionChange> = {
+        rowNumber: issue.rowNumber,
+        field: issue.field,
+        message: issue.message,
+        expected: issue.expected,
+        actual: issue.actual
+      };
+
+      return {
+        type: issue.severity,
+        message: `AI kontrola${issue.rowNumber ? `, radek ${issue.rowNumber}` : ""}${
+          issue.field ? `, ${issue.field}` : ""
+        }: ${issue.message}`,
+        details: [
+          issue.expected ? `Ocekavano: ${issue.expected}` : "",
+          issue.actual ? `Nalezeno: ${issue.actual}` : "",
+          issue.suggestion ? `Navrh: ${issue.suggestion}` : ""
+        ]
+          .filter(Boolean)
+          .join("\n"),
+        source: "ai-review",
+        ...change,
+        suggestion: issue.suggestion
+      };
+    }),
     notes: [
       `AI kontrola: ${parsed.summary}`,
       `AI zkontrolovala radku: ${parsed.checkedRows}`,

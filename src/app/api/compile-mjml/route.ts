@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
-import type { CompileMjmlResponse, ValidationIssue } from "@/lib/types";
-import { compileMjml, validateMjml } from "@/lib/validateEmail";
+import { defaultMjmlCompiler } from "@/lib/mjmlCompiler";
+import type { CompileMjmlResponse } from "@/lib/types";
 
 export const runtime = "nodejs";
 
@@ -23,14 +23,14 @@ export async function POST(request: Request) {
   }
 
   try {
-    const mjmlIssues = validateMjml(mjml, { requireSystemVariables: false });
-    const compiled = compileMjml(mjml);
-    const issues: ValidationIssue[] = [...mjmlIssues, ...compiled.errors];
+    const compiled = defaultMjmlCompiler.compile(mjml, {
+      requireSystemVariables: false
+    });
 
     return jsonResponse({
       ok: true,
       html: compiled.html,
-      issues
+      issues: compiled.issues
     });
   } catch (error) {
     return jsonResponse(

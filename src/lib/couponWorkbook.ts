@@ -1,4 +1,5 @@
 import { createRequire } from "node:module";
+import type { ValidationIssue } from "@/lib/types";
 
 type XlsxModule = {
   read: (data: Buffer, options: { type: "buffer"; cellDates: false }) => Workbook;
@@ -30,8 +31,11 @@ export type CouponWorkbookResult = {
   coupons: CouponRow[];
   rows: WorkbookDataRow[];
   headers: string[];
+  issues: ValidationIssue[];
   warnings: string[];
+  couponIssues: ValidationIssue[];
   couponWarnings: string[];
+  tableIssues: ValidationIssue[];
   tableWarnings: string[];
   logoCount: number;
 };
@@ -45,6 +49,8 @@ export type WorkbookDataRow = {
   rowNumber: number;
   values: Record<string, string>;
 };
+
+export const DEFAULT_COUPON_WORKBOOK_LIMIT = 100;
 
 function getXlsx(): XlsxModule {
   const requireFromProject = createRequire(`${process.cwd()}/package.json`);
@@ -246,6 +252,192 @@ function normalizeWorkbookRows(rows: unknown[][]): {
   return { rows: dataRows, headers: headers.filter(Boolean), warnings };
 }
 
+function excelIssue(
+  type: ValidationIssue["type"],
+  message: string,
+  details?: string
+): ValidationIssue {
+  return {
+    type,
+    message: `Excel: ${message}`,
+    details,
+    source: "excel-workbook"
+  };
+}
+
+function duplicateHeaders(headers: string[]) {
+  const counts = new Map<string, number>();
+
+  for (const header of headers) {
+    const normalized = normalizeHeader(header);
+    if (!normalized) {
+      continue;
+    }
+    counts.set(normalized, (counts.get(normalized) || 0) + 1);
+  }
+
+  return Array.from(counts)
+    .filter(([, count]) => count > 1)
+    .map(([header]) => header);
+}
+
+function tableHealthIssues(
+  rawRows: unknown[][],
+  table: ReturnType<typeof normalizeWorkbookRows>,
+  limit: number
+): ValidationIssue[] {
+  const issues = table.warnings.map((message) => excelIssue("warning", message));
+  const visibleRowCount = rawRows.filter((row) => row.map(text).some(Boolean)).length;
+  const duplicates = duplicateHeaders(table.headers);
+
+  if (visibleRowCount === 0) {
+    issues.push(
+      excelIssue(
+        "error",
+        "List je prazdny nebo obsahuje jen prazdne bunky.",
+        "Nahrajte list s hlavickou a alespon jednim datovym radkem."
+      )
+    );
+    return issues;
+  }
+
+  if (table.headers.length === 0) {
+    issues.push(
+      excelIssue(
+        "error",
+        "Nepodarilo se rozpoznat hlavicku tabulky.",
+        "Prvni pouzitelny radek by mel obsahovat nazvy sloupcu, napr. Specifikace promokodu, Zneni kuponu a Affiliate odkaz."
+      )
+    );
+    return issues;
+  }
+
+  if (table.headers.length < 3) {
+    issues.push(
+      excelIssue(
+        "warning",
+        `Tabulka ma jen ${table.headers.length} rozpoznane sloupce.`,
+        "Zkontrolujte, jestli je vybrany spravny list a jestli hlavicka neni posunuta nebo sloucena."
+      )
+    );
+  }
+
+  if (duplicates.length) {
+    issues.push(
+      excelIssue(
+        "warning",
+        `Duplicitni nazvy sloupcu: ${duplicates.join(", ")}.`,
+        "Duplicitni hlavicky mohou zpusobit, ze se do sablony propise jina hodnota, nez cekate."
+      )
+    );
+  }
+
+  if (table.rows.length === 0) {
+    issues.push(
+      excelIssue(
+        "error",
+        "Tabulka ma hlavicku, ale zadne datove radky.",
+        "Doplnte alespon jeden radek s hodnotami pod hlavicku."
+      )
+    );
+  }
+
+  if (table.rows.length > limit) {
+    issues.push(
+      excelIssue(
+        "warning",
+        `Tabulka obsahuje vice nez ${limit} datovych radku, pouzije se jen prvnich ${limit}.`
+      )
+    );
+  }
+
+  const sparseRows = table.rows.filter(
+    (row) => Object.values(row.values).filter(Boolean).length <= 1
+  ).length;
+
+  if (table.rows.length >= 4 && sparseRows / table.rows.length >= 0.5) {
+    issues.push(
+      excelIssue(
+        "warning",
+        "Vetsina datovych radku ma vyplnenou jen jednu bunku.",
+        "Tabulka muze byt spatne rozpoznana, posunuta, sloucena nebo muze byt vybrany nespravny list."
+      )
+    );
+  }
+
+  return issues;
+}
+
+function couponHealthIssues(
+  normalized: ReturnType<typeof normalizeRows>,
+  coupons: CouponRow[]
+): ValidationIssue[] {
+  const issues = normalized.warnings.map((message) => excelIssue("warning", message));
+  const codeCounts = new Map<string, number>();
+  const urlCounts = new Map<string, number>();
+
+  if (normalized.coupons.length === 0) {
+    issues.push(
+      excelIssue(
+        "error",
+        "Nepodarilo se najit zadne pouzitelne kupony.",
+        "Kuponovy radek musi mit specifikaci, zneni kuponu a affiliate odkaz zacinajici na http."
+      )
+    );
+  }
+
+  for (const coupon of coupons) {
+    if (coupon.code) {
+      codeCounts.set(coupon.code, (codeCounts.get(coupon.code) || 0) + 1);
+    }
+    if (coupon.url) {
+      urlCounts.set(coupon.url, (urlCounts.get(coupon.url) || 0) + 1);
+    }
+  }
+
+  const duplicateCodes = Array.from(codeCounts)
+    .filter(([, count]) => count > 1)
+    .map(([code]) => code);
+  const duplicateUrls = Array.from(urlCounts)
+    .filter(([, count]) => count > 1)
+    .map(([url]) => url);
+
+  if (duplicateCodes.length) {
+    issues.push(
+      excelIssue(
+        "warning",
+        `Duplicitni kuponove kody: ${duplicateCodes.slice(0, 8).join(", ")}.`,
+        duplicateCodes.length > 8 ? `Dalsich duplicit: ${duplicateCodes.length - 8}.` : undefined
+      )
+    );
+  }
+
+  if (duplicateUrls.length) {
+    issues.push(
+      excelIssue(
+        "warning",
+        `Duplicitni affiliate odkazy: ${duplicateUrls.length}.`,
+        "Duplicitni odkazy mohou byt v poradku, ale stoji za rychlou kontrolu."
+      )
+    );
+  }
+
+  return issues;
+}
+
+function uniqueIssues(issues: ValidationIssue[]) {
+  const seen = new Set<string>();
+
+  return issues.filter((issue) => {
+    const key = `${issue.type}|${issue.message}|${issue.details || ""}`;
+    if (seen.has(key)) {
+      return false;
+    }
+    seen.add(key);
+    return true;
+  });
+}
+
 function normalizeRowsWithoutHeader(rows: unknown[][]): {
   coupons: CouponRow[];
   warnings: string[];
@@ -308,23 +500,91 @@ function normalizeRowsWithoutHeader(rows: unknown[][]): {
 
 export function readCouponWorkbookFromUpload(
   input: CouponWorkbookInput,
-  limit = 12
+  limit = DEFAULT_COUPON_WORKBOOK_LIMIT
 ): CouponWorkbookResult {
   const xlsx = getXlsx();
   const workbook = xlsx.read(input.buffer, { type: "buffer", cellDates: false });
+
+  if (!workbook.SheetNames.length) {
+    const issues = [
+      excelIssue(
+        "error",
+        "Soubor neobsahuje zadny list.",
+        "Zkontrolujte, jestli nahravate spravny .xlsx nebo .xls soubor."
+      )
+    ];
+
+    return {
+      fileName: input.fileName,
+      sheetName: "",
+      coupons: [],
+      rows: [],
+      headers: [],
+      issues,
+      warnings: issues.map((issue) => issue.message.replace(/^Excel:\s*/, "")),
+      couponIssues: [],
+      couponWarnings: [],
+      tableIssues: issues,
+      tableWarnings: [],
+      logoCount: 0
+    };
+  }
+
   const sheetName = pickSheetName(workbook);
+  const sheet = workbook.Sheets[sheetName];
+
+  if (!sheet) {
+    const issues = [
+      excelIssue(
+        "error",
+        `List "${sheetName}" se nepodarilo nacist.`,
+        "Zkuste soubor znovu ulozit v Excelu a nahrat aktualni verzi."
+      )
+    ];
+
+    return {
+      fileName: input.fileName,
+      sheetName,
+      coupons: [],
+      rows: [],
+      headers: [],
+      issues,
+      warnings: issues.map((issue) => issue.message.replace(/^Excel:\s*/, "")),
+      couponIssues: [],
+      couponWarnings: [],
+      tableIssues: issues,
+      tableWarnings: [],
+      logoCount: 0
+    };
+  }
+
   const rows = xlsx.utils.sheet_to_json<unknown[]>(
-    workbook.Sheets[sheetName],
+    sheet,
     { header: 1, blankrows: false }
   );
   const normalized = normalizeRows(rows);
   const table = normalizeWorkbookRows(rows);
   const coupons = normalized.coupons.slice(0, limit);
-  const warnings = [...normalized.warnings, ...table.warnings];
+  const tableIssues = tableHealthIssues(rows, table, limit);
+  const couponIssues = couponHealthIssues(normalized, coupons);
+  const issues = uniqueIssues([...tableIssues, ...couponIssues]);
+  const warnings = issues.map((issue) => issue.message.replace(/^Excel:\s*/, ""));
   const logoCount = coupons.filter((coupon) => Boolean(coupon.logoUrl)).length;
 
   if (normalized.coupons.length > limit) {
     warnings.push(`Pouzito prvnich ${limit} kuponu z ${normalized.coupons.length}.`);
+    couponIssues.push(
+      excelIssue(
+        "warning",
+        `Pouzito prvnich ${limit} kuponu z ${normalized.coupons.length}.`
+      )
+    );
+    issues.push(
+      excelIssue(
+        "warning",
+        `Pouzito prvnich ${limit} kuponu z ${normalized.coupons.length}.`
+      )
+    );
   }
 
   if (coupons.length === 0) {
@@ -337,8 +597,11 @@ export function readCouponWorkbookFromUpload(
     coupons,
     rows: table.rows.slice(0, limit),
     headers: table.headers,
+    issues: uniqueIssues(issues),
     warnings,
+    couponIssues: uniqueIssues(couponIssues),
     couponWarnings: normalized.warnings,
+    tableIssues: uniqueIssues(tableIssues),
     tableWarnings: table.warnings,
     logoCount
   };

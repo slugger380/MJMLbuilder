@@ -1,14 +1,24 @@
 import OpenAI from "openai";
 import { NextResponse } from "next/server";
 import { allowedVariables } from "@/config/allowedVariables";
+import {
+  generatedEmailSchema,
+  OpenAiTemplateGenerator,
+  validateGeneratedEmailJson
+} from "@/lib/aiTemplateGenerator";
+import { getBrandStyle } from "@/lib/brandStyleStore";
 import { buildSystemPrompt, buildUserPrompt } from "@/lib/prompts";
-import { buildCouponsTemplate } from "@/lib/preparedTemplates";
-import { readCouponWorkbookFromUpload } from "@/lib/couponWorkbook";
+import {
+  DEFAULT_COUPON_WORKBOOK_LIMIT,
+  readCouponWorkbookFromUpload
+} from "@/lib/couponWorkbook";
+import { couponExcelTemplateAssembler } from "@/lib/excelTemplateAssembler";
 import { reviewCouponsWithAi } from "@/lib/couponAiReview";
 import type {
   GenerateEmailRequest,
   GenerateEmailResponse,
   GeneratedEmailJson,
+  TemplateGenerationRequest,
   ValidationIssue
 } from "@/lib/types";
 import {
@@ -20,29 +30,28 @@ import {
 
 export const runtime = "nodejs";
 
-const generatedEmailSchema = {
-  type: "object",
-  additionalProperties: false,
-  properties: {
-    subject: { type: "string" },
-    preheader: { type: "string" },
-    mjml: { type: "string" },
-    usedVariables: {
-      type: "array",
-      items: { type: "string" }
-    },
-    notes: {
-      type: "array",
-      items: { type: "string" }
-    }
-  },
-  required: ["subject", "preheader", "mjml", "usedVariables", "notes"]
-} as const;
+const MAX_EXCEL_UPLOAD_BYTES = 8 * 1024 * 1024;
+const MAX_TEMPLATE_UPLOAD_BYTES = 2 * 1024 * 1024;
+const excelFilePattern = /\.(xlsx|xls)$/i;
+const mjmlFilePattern = /\.mjml$/i;
 
 function validateRequest(body: Partial<GenerateEmailRequest>): ValidationIssue[] {
   const issues: ValidationIssue[] = [];
 
   if (body.templateId === "coupons-excel") {
+    return issues;
+  }
+
+  if (body.brandStyleId || body.prompt || !body.topic) {
+    if (!body.brandStyleId?.trim()) {
+      issues.push({ type: "error", message: "Vyberte brand styl." });
+    }
+    if (!body.prompt?.trim()) {
+      issues.push({
+        type: "error",
+        message: "Chybi volny popis e-mailove sablony."
+      });
+    }
     return issues;
   }
 
@@ -57,23 +66,6 @@ function validateRequest(body: Partial<GenerateEmailRequest>): ValidationIssue[]
   }
 
   return issues;
-}
-
-function validateGeneratedJson(value: unknown): value is GeneratedEmailJson {
-  if (!value || typeof value !== "object") {
-    return false;
-  }
-
-  const candidate = value as GeneratedEmailJson;
-  return (
-    typeof candidate.subject === "string" &&
-    typeof candidate.preheader === "string" &&
-    typeof candidate.mjml === "string" &&
-    Array.isArray(candidate.usedVariables) &&
-    candidate.usedVariables.every((item) => typeof item === "string") &&
-    Array.isArray(candidate.notes) &&
-    candidate.notes.every((item) => typeof item === "string")
-  );
 }
 
 function removeNestedMjWrappers(mjml: string): string {
@@ -132,18 +124,81 @@ function formBoolean(formData: FormData, key: keyof GenerateEmailRequest): boole
   return formValue(formData, key) === "true";
 }
 
+function uploadIssue(message: string, details?: string): ValidationIssue {
+  return {
+    type: "error",
+    message,
+    details,
+    source: "excel-workbook"
+  };
+}
+
+function validateUploadedFile(
+  file: File,
+  options: {
+    label: string;
+    maxBytes: number;
+    pattern: RegExp;
+    allowedDescription: string;
+  }
+): ValidationIssue | undefined {
+  if (file.size > options.maxBytes) {
+    return uploadIssue(
+      `${options.label} je prilis velky.`,
+      `Maximum je ${Math.round(options.maxBytes / 1024 / 1024)} MB.`
+    );
+  }
+
+  if (!options.pattern.test(file.name)) {
+    return uploadIssue(
+      `${options.label} ma nepodporovany typ souboru.`,
+      `Povoleno: ${options.allowedDescription}.`
+    );
+  }
+
+  return undefined;
+}
+
 async function requestFromFormData(request: Request): Promise<{
   body: GenerateEmailRequest;
   couponWorkbook?: { buffer: Buffer; fileName: string };
   couponTemplate?: { buffer: Buffer; fileName: string };
+  uploadIssues: ValidationIssue[];
 }> {
   const formData = await request.formData();
   const workbook = formData.get("couponWorkbook");
   const template = formData.get("couponTemplate");
+  const uploadIssues: ValidationIssue[] = [];
+
+  if (workbook instanceof File && workbook.size > 0) {
+    const issue = validateUploadedFile(workbook, {
+      label: "Excel tabulka",
+      maxBytes: MAX_EXCEL_UPLOAD_BYTES,
+      pattern: excelFilePattern,
+      allowedDescription: ".xlsx nebo .xls"
+    });
+    if (issue) {
+      uploadIssues.push(issue);
+    }
+  }
+
+  if (template instanceof File && template.size > 0) {
+    const issue = validateUploadedFile(template, {
+      label: "MJML sablona",
+      maxBytes: MAX_TEMPLATE_UPLOAD_BYTES,
+      pattern: mjmlFilePattern,
+      allowedDescription: ".mjml"
+    });
+    if (issue) {
+      uploadIssues.push(issue);
+    }
+  }
 
   return {
     body: {
       templateId: formValue(formData, "templateId") === "coupons-excel" ? "coupons-excel" : "ai",
+      brandStyleId: formValue(formData, "brandStyleId"),
+      prompt: formValue(formData, "prompt"),
       emailType: (formValue(formData, "emailType") || "promo") as GenerateEmailRequest["emailType"],
       topic: formValue(formData, "topic"),
       mainMessage: formValue(formData, "mainMessage"),
@@ -152,6 +207,7 @@ async function requestFromFormData(request: Request): Promise<{
       notes: formValue(formData, "notes"),
       useAiMatching: formBoolean(formData, "useAiMatching"),
       useAiReview: formBoolean(formData, "useAiReview"),
+      includeSelfServiceAd: formBoolean(formData, "includeSelfServiceAd"),
       couponMonth: formValue(formData, "couponMonth")
     },
     couponWorkbook:
@@ -167,7 +223,8 @@ async function requestFromFormData(request: Request): Promise<{
             buffer: Buffer.from(await template.arrayBuffer()),
             fileName: template.name
           }
-        : undefined
+        : undefined,
+    uploadIssues
   };
 }
 
@@ -175,14 +232,16 @@ async function requestFromJson(request: Request): Promise<{
   body: GenerateEmailRequest;
   couponWorkbook?: { buffer: Buffer; fileName: string };
   couponTemplate?: { buffer: Buffer; fileName: string };
+  uploadIssues: ValidationIssue[];
 }> {
-  return { body: (await request.json()) as GenerateEmailRequest };
+  return { body: (await request.json()) as GenerateEmailRequest, uploadIssues: [] };
 }
 
 export async function POST(request: Request) {
   let body: GenerateEmailRequest;
   let couponWorkbook: { buffer: Buffer; fileName: string } | undefined;
   let couponTemplate: { buffer: Buffer; fileName: string } | undefined;
+  let uploadIssues: ValidationIssue[] = [];
   try {
     const contentType = request.headers.get("content-type") || "";
     const parsed = contentType.includes("multipart/form-data")
@@ -191,11 +250,13 @@ export async function POST(request: Request) {
     body = parsed.body;
     couponWorkbook = parsed.couponWorkbook;
     couponTemplate = parsed.couponTemplate;
+    uploadIssues = parsed.uploadIssues;
   } catch {
     return jsonResponse({ ok: false, error: "Request musi byt validni JSON nebo formular." }, 400);
   }
 
   const requestIssues = validateRequest(body);
+  requestIssues.push(...uploadIssues);
   if (requestIssues.some((issue) => issue.type === "error")) {
     return jsonResponse(
       {
@@ -224,16 +285,16 @@ export async function POST(request: Request) {
         html: htmlFromTemplate,
         templateSourceType,
         issues: templateIssues
-      } = await buildCouponsTemplate(
-        body,
-        couponWorkbook,
-        couponTemplate,
-        {
+      } = await couponExcelTemplateAssembler.assemble({
+        input: body,
+        workbook: couponWorkbook,
+        template: couponTemplate,
+        options: {
           openaiApiKey: process.env.OPENAI_API_KEY,
           model: process.env.OPENAI_MODEL || "gpt-5.2",
           useAiMatching: Boolean(body.useAiMatching)
         }
-      );
+      });
       const variableIssues =
         templateSourceType === "mjml"
           ? validateVariables(generated.mjml, [...allowedVariables])
@@ -259,7 +320,10 @@ export async function POST(request: Request) {
           });
         } else if (generated.mjml && compiled.errors.length === 0) {
           try {
-            const workbook = readCouponWorkbookFromUpload(couponWorkbook, 24);
+            const workbook = readCouponWorkbookFromUpload(
+              couponWorkbook,
+              DEFAULT_COUPON_WORKBOOK_LIMIT
+            );
             const review = await reviewCouponsWithAi({
               apiKey: process.env.OPENAI_API_KEY,
               model: process.env.OPENAI_MODEL || "gpt-5.2",
@@ -299,6 +363,83 @@ export async function POST(request: Request) {
         usedVariables: generated.usedVariables,
         notes: [...generated.notes, ...aiReviewNotes],
         issues
+      });
+    }
+
+    if (body.brandStyleId?.trim() || body.prompt?.trim()) {
+      if (!process.env.OPENAI_API_KEY) {
+        return jsonResponse(
+          {
+            ok: false,
+            error:
+              "Chybi OPENAI_API_KEY. Doplnte ho do .env.local podle .env.example."
+          },
+          500
+        );
+      }
+
+      const brandStyleId = body.brandStyleId?.trim() || "";
+      const prompt = body.prompt?.trim() || "";
+      const brandStyle = await getBrandStyle(brandStyleId);
+
+      if (!brandStyle) {
+        return jsonResponse(
+          {
+            ok: false,
+            error: "Vybrany brand styl nebyl nalezen."
+          },
+          404
+        );
+      }
+
+      const generator = new OpenAiTemplateGenerator({
+        apiKey: process.env.OPENAI_API_KEY,
+        model: process.env.OPENAI_MODEL || "gpt-5.2"
+      });
+      const generationRequest: TemplateGenerationRequest = {
+        templateId: "ai",
+        brandStyleId,
+        prompt
+      };
+      const generated = await generator.generate({
+        request: generationRequest,
+        brandStyle
+      });
+      const normalized = normalizeGeneratedMjml(generated.mjml);
+      const generatedEmail: GeneratedEmailJson = {
+        ...generated,
+        mjml: normalized.mjml,
+        notes: [
+          ...generated.notes,
+          ...normalized.notes,
+          `Pouzity brand styl: ${brandStyle.name}.`
+        ]
+      };
+      const variableIssues = validateVariables(generatedEmail.mjml, [...allowedVariables]);
+      const mjmlIssues = validateMjml(generatedEmail.mjml);
+      const compiled = compileMjml(generatedEmail.mjml);
+      const allowedVariableSet = new Set<string>(allowedVariables);
+      const usedVariableIssues = generatedEmail.usedVariables
+        .filter((variable) => !allowedVariableSet.has(variable))
+        .map((variable) => ({
+          type: "error" as const,
+          message: `OpenAI nahlasilo nepovolenou promenou: {{${variable}}}.`
+        }));
+
+      return jsonResponse({
+        ok: true,
+        subject: generatedEmail.subject,
+        preheader: generatedEmail.preheader,
+        mjml: generatedEmail.mjml,
+        html: compiled.html,
+        usedVariables: generatedEmail.usedVariables,
+        notes: generatedEmail.notes,
+        issues: [
+          ...variableIssues,
+          ...usedVariableIssues,
+          ...mjmlIssues,
+          ...compiled.errors
+        ]
       });
     }
 
@@ -343,7 +484,7 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!validateGeneratedJson(generated)) {
+    if (!validateGeneratedEmailJson(generated)) {
       return jsonResponse(
         {
           ok: false,
@@ -363,7 +504,7 @@ export async function POST(request: Request) {
     const mjmlIssues = validateMjml(generatedEmail.mjml);
     const requirementIssues = validateEmailRequirements(
       generatedEmail.mjml,
-      body.emailType
+      body.emailType || "promo"
     );
     const compiled = compileMjml(generatedEmail.mjml);
     const allowedVariableSet = new Set<string>(allowedVariables);

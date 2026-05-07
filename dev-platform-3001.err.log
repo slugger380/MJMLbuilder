@@ -1,0 +1,8 @@
+⨯ Another next dev server is already running.
+
+- Local:        http://localhost:3000
+- PID:          14524
+- Dir:          G:\Starnet 2025\Mail šablony\MJML aplikace
+- Log:          .next\dev\logs\next-development.log
+
+Run taskkill /PID 14524 /F to stop it.
